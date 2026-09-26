@@ -252,7 +252,7 @@
             accent-color: #00e5ff;
         }
 
-        /* KẾT QUẢ */
+        /* KẾT QUẢ - ĐÃ SỬA LỖI XUỐNG DÒNG */
         #resultBox { 
             padding: 20px; 
             border-radius: 6px; 
@@ -260,11 +260,12 @@
             min-height: 120px; 
             font-weight: bold; 
             white-space: pre-wrap; 
-            line-height: 1.5; 
+            line-height: 1.6; 
             border: 2px solid #555; 
             background: #222; 
             margin-top: 10px;
-            word-break: break-all;
+            word-break: break-word; /* QUAN TRỌNG: Không dùng break-all */
+            overflow-wrap: break-word;
         }
         .result-pass { background-color: #28a745 !important; color: white !important; border-color: #1e7e34 !important; }
         .result-ng { background-color: #dc3545 !important; color: white !important; border-color: #bd2130 !important; }
@@ -480,7 +481,10 @@
                 fps: 10,
                 qrbox: (viewfinderWidth, viewfinderHeight) => {
                     let minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-                    return { width: Math.floor(minEdge * 0.75), height: Math.floor(minEdge * 0.75) };
+                    return {
+                        width: Math.floor(minEdge * 0.75),
+                        height: Math.floor(minEdge * 0.75)
+                    };
                 },
                 aspectRatio: 1.0
             };
@@ -780,14 +784,10 @@
 
     // =========================================================================
     // HÀM TÍNH TUẦN CHUẨN XÁC VỚI THỜI GIAN THỰC TẾ
-    // Đã khắc phục lỗi lấy nguyên "sysTime" dẫn tới sai số ngày thập phân
     // =========================================================================
     function getVBAWeekNum(d) {
-        // Ép thời gian về đúng mốc 00:00:00 của ngày hôm đó để chia không bị lẻ giờ/phút
         const dateOnly = new Date(d.getFullYear(), d.getMonth(), d.getDate());
         const firstDayOfYear = new Date(d.getFullYear(), 0, 1);
-        
-        // Dùng Math.round để triệt tiêu mọi sai số có thể xảy ra khi trừ thời gian (DST, Timezone)
         const pastDays = Math.round((dateOnly - firstDayOfYear) / 86400000);
         return Math.ceil((pastDays + firstDayOfYear.getDay() + 1) / 7).toString().padStart(2, '0');
     }
@@ -1112,7 +1112,8 @@
         let okDetails = "";
 
         if (!isSingleRetailBarcode && !isITF14ShippingMark) {
-            okDetails = `Năm: ${b_Year} | Tuần: ${b_Week}`;
+            // Sử dụng \xA0 để gắn chặt các từ khóa lại với nhau
+            okDetails = `Năm:\xA0${b_Year} | Tuần:\xA0${b_Week}`;
             if (isFormatError) { isPass = false; errDetails += "[!] LỖI CẤU TRÚC TEM (Sai độ dài hoặc sai định dạng)\n"; }
 
             let targetYear = (branchName === "KA FORMAT") ? a_YearCode : a_Year;
@@ -1129,12 +1130,15 @@
             if (b_Day) {
                 let dNum = parseInt(b_Day);
                 let b_DayName = (!isNaN(dNum) && dNum <= 6) ? dayNames[dNum].replace(" ", "\xA0") : "Lỗi";
-                okDetails += ` | ${b_DayName}`;
+                
+                // Ép xuống dòng để không bị dồn 1 cục dài
+                okDetails += `\nNgày/Ca: ${b_DayName}`;
+                
                 if (b_Day !== a_Day) { isPass = false; errDetails += `[-] Thứ: In sai [${b_DayName}] -> Đúng là [${dayNames[parseInt(a_Day)]}]\n`; }
             } else if (!skipDayCheck) { isPass = false; errDetails += "[-] Thiếu thông tin Thứ trên tem.\n"; }
 
             if (b_Shift) {
-                let b_ShiftName = (b_Shift === "D") ? "Ca\xA0Ngày" : (b_Shift === "N" ? "Ca\xA0Đêm" : b_Shift);
+                let b_ShiftName = (b_Shift === "D") ? "Ca\xA0Ngày" : (b_Shift === "N" ? "Ca\xA0Đêm" : b_Shift.replace(" ", "\xA0"));
                 okDetails += ` | ${b_ShiftName}`;
                 if (b_Shift !== a_Shift) { isPass = false; errDetails += `[-] Ca: In sai [${b_ShiftName}] -> Đúng là [${a_Shift==="D"?"Ca\xA0Ngày":"Ca\xA0Đêm"}]\n`; }
             } else if (!skipDayCheck) { isPass = false; errDetails += "[-] Thiếu thông tin Ca trên tem.\n"; }
@@ -1282,7 +1286,7 @@
             if (isSingleRetailBarcode) passMsg = `PASS - MÃ EAN/UPC\nLoại mã: ${barcodeType}\nMã quét: ${rawText}\nKhớp MasterData: ${m_EAN}`;
             else if (isITF14ShippingMark) passMsg = `PASS - SHIPPING MARK\nLoại mã: ${barcodeType}\nMã quét: ${rawText}\nKhớp MasterData GTIN-14: ${m_GTIN}`;
             else {
-                passMsg = `PASS - ${branchName}\nLoại mã vạch: ${barcodeType}\nMã quét: ${rawText}\nOK: ${okDetails}`;
+                passMsg = `PASS - ${branchName}\nLoại mã vạch: ${barcodeType}\nMã quét: ${rawText}\n${okDetails}`;
                 if (branchName === "FC EMEA SN" && m_Prefix) passMsg += `\nPrefix match: ${m_Prefix}`;
                 if (t_SKU) passMsg += `\nSKU match: ${branchName.includes("RATING") ? m_SKU_Rating : m_SKU_SN}`;
                 if (t_FW) passMsg += `\nFirmware match: ${t_FW}`;
