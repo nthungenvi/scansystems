@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>HỆ THỐNG KIỂM TRA TEM (WEB)</title>
+    <!-- THƯ VIỆN QUÉT MÃ HTML5-QRCODE -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        body { 
+            margin: 0; 
+            padding: 15px; 
+            background-color: #2b2b2b; 
+            color: white; 
+            transition: background-color 0.1s ease; 
+        }
+        .container { 
+            max-width: 950px; 
+            margin: 0 auto; 
+            background: #3a3a3a; 
+            padding: 25px; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); 
+        }
+
+        /* HEADER */
+        .header { 
+            display: flex; 
+            flex-wrap: wrap;
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 2px solid #555; 
+            padding-bottom: 12px; 
+            margin-bottom: 15px; 
+            gap: 10px;
+        }
+        .header h2 { 
+            margin: 0; 
+            color: #00bcd4; 
+            font-size: 20px; 
+            font-weight: bold;
+        }
+        .sync-box { 
+            display: flex; 
+            flex-wrap: wrap;
+            align-items: center; 
+            gap: 12px; 
+        }
+        .machine-id-text { 
+            font-size: 13px; 
+            color: #ffeb3b; 
+            font-weight: bold; 
+            cursor: pointer;
+        }
+        .status-text { 
+            font-size: 13px; 
+            color: #ccc; 
+        }
+        #offlineIndicator {
+            color: #ff5252;
+            font-weight: bold;
+            font-size: 13px;
+            display: none;
+            margin-left: 5px;
+        }
+        .btn-sync { 
+            background: #008cba; 
+            color: white; 
+            border: none; 
+            padding: 7px 14px; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            font-size: 13px;
+            white-space: nowrap;
+        }
+        .btn-sync:hover { background: #007399; }
+        .btn-sync:active { background: #005f7a; }
+
+        /* ADVANCED CONTROLS */
+        .advanced-controls { 
+            background: #444; 
+            padding: 12px 15px; 
+            border-radius: 6px; 
+            margin-bottom: 15px; 
+            border: 1px solid #555; 
+        }
+        .chk-group { 
+            display: flex; 
+            flex-wrap: wrap;
+            align-items: center; 
+            gap: 15px; 
+        }
+        .chk-group label { 
+            color: white; 
+            display: inline-flex; 
+            align-items: center; 
+            cursor: pointer; 
+            font-weight: normal; 
+            font-size: 14px;
+            margin: 0; 
+            user-select: none;
+        }
+        .chk-group input[type="checkbox"] { 
+            width: 18px; 
+            height: 18px; 
+            margin-right: 6px; 
+            cursor: pointer; 
+        }
+        .separator {
+            border-left: 1px solid #777; 
+            height: 16px; 
+            margin: 0 5px;
+            display: inline-block;
+        }
+
+        .rework-dropdowns { 
+            display: none; 
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); 
+            gap: 10px; 
+            margin-top: 12px; 
+            padding-top: 10px;
+            border-top: 1px dashed #666;
+        }
+        .rework-dropdowns select { 
+            padding: 8px; 
+            font-size: 14px; 
+            background: #222;
+            color: #fff;
+            border: 1px solid #777;
+            border-radius: 4px;
+            width: 100%;
+        }
+        .rework-dropdowns label { 
+            color: #ddd; 
+            font-size: 12px; 
+            margin-bottom: 3px; 
+            display: block;
+        }
+
+        /* FORM */
+        .form-row { margin-bottom: 15px; }
+        label { 
+            display: block; 
+            margin-bottom: 6px; 
+            font-weight: bold; 
+            color: #ffeb3b; 
+            font-size: 14px;
+        }
+        .input-group { 
+            display: flex; 
+            gap: 10px; 
+        }
+        select, input[type="text"] { 
+            width: 100%; 
+            padding: 10px 12px; 
+            font-size: 16px; 
+            border-radius: 4px; 
+            border: 1px solid #777; 
+            background: #222; 
+            color: #fff; 
+            outline: none;
+        }
+        input[type="text"]:focus { 
+            outline: 2px solid #00bcd4; 
+        }
+
+        /* NÚT CAMERA & CỤM ĐIỀU KHIỂN CAMERA */
+        .btn-cam-trigger {
+            padding: 10px 15px;
+            background: #00c853;
+            color: white;
+            font-weight: bold;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            white-space: nowrap;
+            font-size: 14px;
+        }
+        .btn-cam-trigger.active { background: #d50000; }
+
+        #cameraContainer {
+            display: none;
+            margin-top: 10px;
+            background: #111;
+            padding: 10px;
+            border-radius: 8px;
+            border: 2px solid #00bcd4;
+            position: relative;
+        }
+        #reader { 
+            width: 100%; 
+            border-radius: 6px; 
+            overflow: hidden; 
+            background: black; 
+            position: relative;
+            cursor: crosshair;
+        }
+
+        /* Vòng tròn hiệu ứng chạm lấy nét */
+        #focusIndicator {
+            position: absolute;
+            width: 48px;
+            height: 48px;
+            border: 2px solid #00e5ff;
+            border-radius: 50%;
+            pointer-events: none;
+            display: none;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.9);
+            z-index: 100;
+            transition: width 0.15s ease-out, height 0.15s ease-out;
+        }
+        .tap-hint {
+            text-align: center;
+            font-size: 12px;
+            color: #00bcd4;
+            margin-top: 6px;
+            font-style: italic;
+        }
+
+        .cam-tools {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 10px;
+            background: #222;
+            padding: 8px 12px;
+            border-radius: 6px;
+        }
+        .btn-tool {
+            background: #424242;
+            color: white;
+            border: 1px solid #666;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .btn-tool.active { background: #ffd600; color: black; }
+        .zoom-slider-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+        }
+        .zoom-slider-box input[type="range"] {
+            flex: 1;
+            accent-color: #00e5ff;
+        }
+
+        /* KẾT QUẢ */
+        #resultBox { 
+            padding: 20px; 
+            border-radius: 6px; 
+            font-size: 15px; 
+            min-height: 120px; 
+            font-weight: bold; 
+            white-space: pre-wrap; 
+            line-height: 1.5; 
+            border: 2px solid #555; 
+            background: #222; 
+            margin-top: 10px;
+            word-break: break-all;
+        }
+        .result-pass { background-color: #28a745 !important; color: white !important; border-color: #1e7e34 !important; }
+        .result-ng { background-color: #dc3545 !important; color: white !important; border-color: #bd2130 !important; }
+        .result-warn { background-color: #ffc107 !important; color: black !important; border-color: #d39e00 !important; }
+
+        .btn-copy { 
+            display: none; 
+            margin-top: 10px; 
+            padding: 10px 18px; 
+            background: #ff9800; 
+            color: black; 
+            font-weight: bold; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            width: 100%; 
+            font-size: 15px; 
+        }
+        .btn-copy:hover { background: #e68a00; }
+
+        @media (max-width: 600px) {
+            body { padding: 8px; }
+            .container { padding: 15px; }
+            .header h2 { font-size: 17px; }
+            .sync-box { gap: 8px; justify-content: space-between; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h2>HỆ THỐNG KIỂM TRA TEM (WEB V1.0)</h2>
+        <div class="sync-box">
+            <div>
+                <span id="txtMachineId" class="machine-id-text" title="Chạm đúp để đổi tên máy">ID: ...</span>
+                <span id="offlineIndicator">🔴 Kẹt Log</span>
+            </div>
+            <span id="syncStatus" class="status-text">Đang tải MasterData...</span>
+            <button class="btn-sync" onclick="loadMasterDataFromSharePoint(true)">Đồng bộ Dữ liệu</button>
+        </div>
+    </div>
+
+    <!-- KHỐI CHỨC NĂNG GIAO CA & REWORK -->
+    <div class="advanced-controls">
+        <div class="chk-group">
+            <label><input type="checkbox" id="chkNextShift" onchange="toggleNextShift()"> GIAO CA (NEXT SHIFT)</label>
+            <label id="lblOffSunday" style="display:none;"><input type="checkbox" id="chkOffSunday"> Nghỉ CN</label>
+            <span class="separator"></span>
+            <label><input type="checkbox" id="chkRework" onchange="toggleRework()"> LÀM LẠI (REWORK)</label>
+        </div>
+        
+        <div class="rework-dropdowns" id="reworkPanel">
+            <div>
+                <label>Năm (Year)</label>
+                <select id="cmbRYear"></select>
+            </div>
+            <div>
+                <label>Tuần (Week)</label>
+                <select id="cmbRWeek"></select>
+            </div>
+            <div>
+                <label>Thứ (Day)</label>
+                <select id="cmbRDay">
+                    <option value="">- Chọn Thứ -</option>
+                    <option value="0">0 - Chủ nhật</option><option value="1">1 - Thứ 2</option>
+                    <option value="2">2 - Thứ 3</option><option value="3">3 - Thứ 4</option>
+                    <option value="4">4 - Thứ 5</option><option value="5">5 - Thứ 6</option>
+                    <option value="6">6 - Thứ 7</option>
+                </select>
+            </div>
+            <div>
+                <label>Ca (Shift)</label>
+                <select id="cmbRShift">
+                    <option value="">- Chọn Ca -</option>
+                    <option value="D">D - Ca ngày</option><option value="N">N - Ca đêm</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ô CHỌN HOẶC GÕ MODEL -->
+    <div class="form-row">
+        <label for="cmbTargetModel">1. CHỌN HOẶC GÕ MÃ HÀNG (MODEL):</label>
+        <input type="text" id="cmbTargetModel" list="modelList" placeholder="Gõ tìm kiếm hoặc bấm đúp để chọn Model..." autocomplete="off">
+        <datalist id="modelList"></datalist>
+    </div>
+
+    <!-- Ô QUÉT MÃ VÀ NÚT CAMERA -->
+    <div class="form-row">
+        <label for="txtBarcode">2. QUÉT MÃ TEM (HOẶC NHẬP RỒI ẤN ENTER):</label>
+        <div class="input-group">
+            <input type="text" id="txtBarcode" autofocus placeholder="Chờ tín hiệu súng quét hoặc mở camera..." autocomplete="off">
+            <button id="btnToggleCam" class="btn-cam-trigger" onclick="toggleCamera()">📷 MỞ CAMERA</button>
+        </div>
+        
+        <!-- KHUNG CAMERA NÂNG CAO VỚI ZOOM, FLASH & CHẠM LẤY NÉT -->
+        <div id="cameraContainer">
+            <div id="reader"></div>
+            <div id="focusIndicator"></div>
+            <div class="tap-hint">👉 Chạm trực tiếp vào vị trí mã trên khung hình để ép lấy nét</div>
+            <div class="cam-tools">
+                <button id="btnTorch" class="btn-tool" onclick="toggleTorch()">⚡ Đèn Flash: TẮT</button>
+                <div class="zoom-slider-box">
+                    <span style="font-size: 12px; color: #bbb;">🔍 Zoom</span>
+                    <input type="range" id="zoomRange" min="1" max="5" step="0.1" value="1" oninput="applyZoom(this.value)">
+                    <span id="zoomVal" style="font-size: 12px; color: #00e5ff; font-weight: bold;">1.0x</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="resultBox">SẴN SÀNG CHỜ QUÉT MÃ...</div>
+    <button id="btnCopyFormat" class="btn-copy" onclick="copyFormat()">COPY GỢI Ý CẤU TRÚC CHUẨN</button>
+</div>
+
+<script>
+    const API_GET_MASTERDATA_URL = "https://default8b8cc6cf0eaa4b6498e46d4672c449.30.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/08/workflows/3a18c7ccd5824e78b871c01cf93979bb/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=iTuZ9Baa3hHJu2x5Tp3laK-qHffj9Nu-34LUM_GNL_A"; 
+    const WEBHOOK_LOG_URL = "https://default8b8cc6cf0eaa4b6498e46d4672c449.30.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/08/workflows/8bf455924c00450fba07242e29f7071a/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=RHVCTPmoBMFCqB0v1RB4wnOG75tOpabFs6kf-6RPo7k";
+
+    let masterDataRAM = [];
+    let currentIdealFormat = "";
+    let audioCtx = null;
+    let html5QrCode = null;
+    let isCameraOpen = false;
+    let isTorchOn = false;
+    let currentVideoTrack = null;
+
+    // Quản lý Offline Logs
+    let offlineLogsQueue = JSON.parse(localStorage.getItem("OFFLINE_LOGS_QUEUE") || "[]");
+    let currentMachineID = "";
+
+    function initMachineID() {
+        currentMachineID = localStorage.getItem("AUTO_STATION_ID");
+        if (!currentMachineID) {
+            const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+            const timePart = Date.now().toString(36).slice(-4).toUpperCase();
+            currentMachineID = `STATION-${randomPart}-${timePart}`;
+            localStorage.setItem("AUTO_STATION_ID", currentMachineID);
+        }
+        document.getElementById("txtMachineId").innerText = `ID: ${currentMachineID}`;
+    }
+
+    // Nháy đúp để đổi tên máy
+    document.getElementById("txtMachineId").addEventListener("dblclick", function() {
+        let newName = prompt("Nhập tên trạm mới (VD: LINE01_IPQC):", currentMachineID);
+        if (newName && newName.trim() !== "") {
+            currentMachineID = newName.trim().toUpperCase();
+            localStorage.setItem("AUTO_STATION_ID", currentMachineID);
+            this.innerText = `ID: ${currentMachineID}`;
+        }
+    });
+
+    // Trả về thời gian Local YYYY-MM-DD HH:mm:ss
+    function getLocalTimeString() {
+        const d = new Date();
+        const pad = n => n.toString().padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    }
+
+    window.onload = () => {
+        initMachineID();
+        updateOfflineUI();
+
+        const cmbY = document.getElementById("cmbRYear");
+        cmbY.innerHTML = '<option value="">- Chọn Năm -</option>';
+        for(let y = 2025; y <= 2030; y++) { cmbY.innerHTML += `<option value="${y}">${y}</option>`; }
+        
+        const cmbW = document.getElementById("cmbRWeek");
+        cmbW.innerHTML = '<option value="">- Chọn Tuần -</option>';
+        for(let w = 1; w <= 52; w++) { 
+            let ww = w.toString().padStart(2, '0');
+            cmbW.innerHTML += `<option value="${ww}">${ww}</option>`; 
+        }
+
+        loadMasterDataFromSharePoint(false);
+    };
+
+    // =========================================================================
+    // ĐIỀU KHIỂN CAMERA
+    // =========================================================================
+    function toggleCamera() {
+        const btn = document.getElementById("btnToggleCam");
+        const camBox = document.getElementById("cameraContainer");
+
+        if (isCameraOpen) {
+            if (html5QrCode) {
+                btn.innerText = "ĐANG TẮT...";
+                html5QrCode.stop().then(() => {
+                    html5QrCode.clear();
+                    camBox.style.display = "none";
+                    btn.innerText = "📷 MỞ CAMERA";
+                    btn.classList.remove("active");
+                    isCameraOpen = false;
+                    isTorchOn = false;
+                    currentVideoTrack = null;
+                }).catch(err => {
+                    camBox.style.display = "none";
+                    btn.innerText = "📷 MỞ CAMERA";
+                    btn.classList.remove("active");
+                    isCameraOpen = false;
+                });
+            }
+        } else {
+            camBox.style.display = "block";
+            btn.innerText = "ĐANG MỞ...";
+            btn.classList.add("active");
+
+            if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
+
+            const cameraConfig = { facingMode: "environment" };
+            const scanConfig = {
+                fps: 10,
+                qrbox: (viewfinderWidth, viewfinderHeight) => {
+                    let minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                    return { width: Math.floor(minEdge * 0.75), height: Math.floor(minEdge * 0.75) };
+                },
+                aspectRatio: 1.0
+            };
+
+            html5QrCode.start(
+                cameraConfig,
+                scanConfig,
+                (decodedText, decodedResult) => {
+                    playSound('PASS');
+
+                    let formatName = decodedResult?.result?.format?.formatName || "";
+                    let aimPrefix = "";
+
+                    switch (formatName) {
+                        case "CODE_39": aimPrefix = "]A0"; break;
+                        case "CODE_128": aimPrefix = "]C0"; break;
+                        case "DATA_MATRIX": aimPrefix = "]d1"; break;
+                        case "QR_CODE": aimPrefix = "]Q1"; break;
+                        case "ITF": aimPrefix = "]I0"; break;
+                        case "EAN_13": case "UPC_A": aimPrefix = "]E0"; break;
+                        case "PDF_417": aimPrefix = "]L0"; break;
+                        default: aimPrefix = "";
+                    }
+
+                    let fullScanText = aimPrefix + decodedText;
+
+                    const inputBarcode = document.getElementById("txtBarcode");
+                    inputBarcode.value = fullScanText;
+                    toggleCamera();
+                    
+                    // Xóa nội dung ô sau khi quét xong 
+                    setTimeout(() => { 
+                        processBarcode(fullScanText); 
+                        inputBarcode.value = ""; 
+                        inputBarcode.focus(); 
+                    }, 100);
+                },
+                () => {}
+            ).then(() => {
+                isCameraOpen = true;
+                btn.innerText = "🛑 ĐÓNG CAMERA";
+                setTimeout(setupHardwareControls, 600);
+            }).catch((err) => {
+                alert("Không mở được Camera!\nLỗi chi tiết: " + (err.message || err));
+                camBox.style.display = "none";
+                btn.innerText = "📷 MỞ CAMERA";
+                btn.classList.remove("active");
+                isCameraOpen = false;
+            });
+        }
+    }
+
+    function setupHardwareControls() {
+        try {
+            const videoElem = document.querySelector("#reader video");
+            if (videoElem && videoElem.srcObject) {
+                const stream = videoElem.srcObject;
+                const tracks = stream.getVideoTracks();
+                if (tracks.length > 0) {
+                    currentVideoTrack = tracks[0];
+                    const capabilities = currentVideoTrack.getCapabilities();
+
+                    const zoomSlider = document.getElementById("zoomRange");
+                    if (capabilities.zoom) {
+                        zoomSlider.min = capabilities.zoom.min;
+                        zoomSlider.max = capabilities.zoom.max;
+                        zoomSlider.step = capabilities.zoom.step;
+                        zoomSlider.value = capabilities.zoom.min;
+                        zoomSlider.disabled = false;
+                    } else {
+                        zoomSlider.disabled = true;
+                    }
+
+                    const btnTorch = document.getElementById("btnTorch");
+                    if (!capabilities.torch) {
+                        btnTorch.style.opacity = "0.5";
+                        btnTorch.innerText = "⚡ Flash (Ko hỗ trợ)";
+                    } else {
+                        btnTorch.style.opacity = "1";
+                        btnTorch.innerText = "⚡ Đèn Flash: TẮT";
+                    }
+
+                    const readerBox = document.getElementById("reader");
+                    readerBox.removeEventListener("pointerdown", handleTap);
+                    readerBox.addEventListener("pointerdown", handleTap);
+                }
+            }
+        } catch (e) { console.warn("Lỗi tải thông số hardware:", e); }
+    }
+
+    function handleTap(e) {
+        if (!currentVideoTrack) return;
+        const container = document.getElementById("cameraContainer");
+        const rect = container.getBoundingClientRect();
+        const indicator = document.getElementById("focusIndicator");
+        
+        let clientX = e.clientX;
+        let clientY = e.clientY;
+
+        indicator.style.left = `${clientX - rect.left}px`;
+        indicator.style.top = `${clientY - rect.top}px`;
+        indicator.style.display = "block";
+        indicator.style.width = "40px";
+        indicator.style.height = "40px";
+
+        setTimeout(() => {
+            indicator.style.width = "54px";
+            indicator.style.height = "54px";
+        }, 100);
+        setTimeout(() => { indicator.style.display = "none"; }, 800);
+
+        try {
+            const capabilities = currentVideoTrack.getCapabilities();
+            if (capabilities.focusMode) {
+                currentVideoTrack.applyConstraints({
+                    advanced: [{ focusMode: "continuous" }]
+                }).catch(() => {});
+            }
+        } catch (err) {}
+    }
+
+    function toggleTorch() {
+        if (!currentVideoTrack) return;
+        const btn = document.getElementById("btnTorch");
+        const capabilities = currentVideoTrack.getCapabilities();
+
+        if (capabilities.torch) {
+            isTorchOn = !isTorchOn;
+            currentVideoTrack.applyConstraints({ advanced: [{ torch: isTorchOn }] })
+            .then(() => {
+                btn.innerText = isTorchOn ? "⚡ Đèn Flash: BẬT" : "⚡ Đèn Flash: TẮT";
+                btn.classList.toggle("active", isTorchOn);
+            }).catch(e => console.error(e));
+        } else {
+            alert("Thiết bị này không hỗ trợ bật Flash qua Web.");
+        }
+    }
+
+    function applyZoom(val) {
+        document.getElementById("zoomVal").innerText = parseFloat(val).toFixed(1) + "x";
+        if (currentVideoTrack) {
+            currentVideoTrack.applyConstraints({ advanced: [{ zoom: parseFloat(val) }] }).catch(e => console.warn(e));
+        }
+    }
+
+    // =========================================================================
+    // CÁC HÀM XỬ LÝ CA & REWORK
+    // =========================================================================
+    function toggleNextShift() {
+        const chkNext = document.getElementById("chkNextShift");
+        const chkRework = document.getElementById("chkRework");
+        const lblSunday = document.getElementById("lblOffSunday");
+        const chkSunday = document.getElementById("chkOffSunday");
+
+        if (chkNext.checked) {
+            chkRework.checked = false;
+            lblSunday.style.display = "inline-flex";
+            toggleReworkPanel();
+        } else {
+            lblSunday.style.display = "none";
+            chkSunday.checked = false;
+        }
+        document.getElementById("txtBarcode").focus();
+    }
+
+    function toggleRework() {
+        const chkNext = document.getElementById("chkNextShift");
+        const chkRework = document.getElementById("chkRework");
+        const lblSunday = document.getElementById("lblOffSunday");
+        const chkSunday = document.getElementById("chkOffSunday");
+
+        if (chkRework.checked) {
+            chkNext.checked = false;
+            lblSunday.style.display = "none";
+            chkSunday.checked = false;
+        }
+        toggleReworkPanel();
+        document.getElementById("txtBarcode").focus();
+    }
+
+    function toggleReworkPanel() {
+        document.getElementById("reworkPanel").style.display = document.getElementById("chkRework").checked ? "grid" : "none";
+    }
+
+    function playSound(type) {
+        try {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            if (type === 'PASS') {
+                osc.frequency.value = 2000; osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+            } else if(type === 'WARN') {
+                osc.frequency.value = 800; osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else {
+                osc.frequency.value = 500; osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+            }
+        } catch (e) { console.error("Audio Error:", e); }
+    }
+
+    // =========================================================================
+    // ĐỒNG BỘ MASTERDATA VÀ LOG OFFLINE
+    // =========================================================================
+    async function loadMasterDataFromSharePoint(isManual = false) {
+        const statusLbl = document.getElementById("syncStatus");
+        statusLbl.innerText = "Đang tải MasterData...";
+        
+        if (isManual) syncOfflineLogs();
+
+        const localCache = localStorage.getItem("CACHED_MASTER_DATA_V2");
+        if (localCache && !isManual) {
+            masterDataRAM = JSON.parse(localCache);
+            populateModelDropdown();
+            statusLbl.innerText = `Đã nạp ${masterDataRAM.length} dòng (Offline Cache)`;
+        }
+
+        try {
+            const resp = await fetch(API_GET_MASTERDATA_URL, { 
+                method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({})
+            });
+            if (resp.ok) {
+                const data = await resp.json();
+                masterDataRAM = data;
+                localStorage.setItem("CACHED_MASTER_DATA_V2", JSON.stringify(data));
+                populateModelDropdown();
+                statusLbl.innerText = `Cập nhật lúc ${new Date().toLocaleTimeString()} (${data.length} dòng)`;
+            } else {
+                if (!localCache) statusLbl.innerText = "Lỗi kết nối SharePoint!";
+            }
+        } catch (err) {
+            console.warn("Lỗi fetch:", err);
+            if (!localCache) statusLbl.innerText = "Mất mạng! Không tải được dữ liệu.";
+        }
+    }
+
+    function updateOfflineUI() {
+        const ind = document.getElementById("offlineIndicator");
+        if (offlineLogsQueue.length > 0) {
+            ind.style.display = "inline-block";
+            ind.innerText = `🔴 Kẹt ${offlineLogsQueue.length} Log`;
+        } else {
+            ind.style.display = "none";
+        }
+    }
+
+    async function syncOfflineLogs() {
+        if (offlineLogsQueue.length === 0) return;
+        let pending = [];
+        for (let i = 0; i < offlineLogsQueue.length; i++) {
+            try {
+                const resp = await fetch(WEBHOOK_LOG_URL, {
+                    method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(offlineLogsQueue[i])
+                });
+                if (!resp.ok) throw new Error("Thất bại");
+            } catch (e) {
+                pending.push(offlineLogsQueue[i]);
+            }
+        }
+        offlineLogsQueue = pending;
+        localStorage.setItem("OFFLINE_LOGS_QUEUE", JSON.stringify(offlineLogsQueue));
+        updateOfflineUI();
+    }
+
+    function populateModelDropdown() {
+        const dataList = document.getElementById("modelList");
+        dataList.innerHTML = "";
+        
+        const uniqueModels = new Set();
+        masterDataRAM.forEach(row => {
+            const model = (row["Model_Number (Cot C)"] || "").toString().trim().toUpperCase();
+            if (model) uniqueModels.add(model);
+        });
+
+        Array.from(uniqueModels).sort().forEach(m => {
+            dataList.innerHTML += `<option value="${m}">${m}</option>`;
+        });
+    }
+    setInterval(() => { loadMasterDataFromSharePoint(false); syncOfflineLogs(); }, 10 * 60 * 1000);
+
+    function isAllDigits(str) { return /^\d+$/.test(str); }
+
+    function restoreTelex(s) {
+        if (!s) return "";
+        if (s.charAt(0) === 'ư' || s.charAt(0) === 'Ư') s = "]" + s.substring(1);
+        
+        let map = {
+            "ỵ": "YRF", "ỷ": "YRJ", "ỹ": "YR", "Ý": "YRS", "ỷ": "YRX", "ỵ": "YRF", "ỷ": "YRJ", "ỹ": "YR", "ý": "yrs", "ỷ": "yrx",
+            "Đ": "DD", "đ": "dd", "Ê": "EE", "ê": "ee", "Â": "AA", "â": "aa", "Ô": "OO", "ô": "oo", "Ă": "AW", "ă": "aw"
+        };
+        for (let key in map) { s = s.split(key).join(map[key]); }
+        s = s.replace(/ĂMG/g, "EMRG").replace(/ĂM/g, "EMR").replace(/ỄMG/g, "EMRG").replace(/ỄM/g, "EMR");
+        s = s.replace(/ămg/g, "emrg").replace(/ẽmg/g, "emrg");
+        return s;
+    }
+
+    // =========================================================================
+    // HÀM TÍNH TUẦN CHUẨN XÁC VỚI THỜI GIAN THỰC TẾ
+    // Đã khắc phục lỗi lấy nguyên "sysTime" dẫn tới sai số ngày thập phân
+    // =========================================================================
+    function getVBAWeekNum(d) {
+        // Ép thời gian về đúng mốc 00:00:00 của ngày hôm đó để chia không bị lẻ giờ/phút
+        const dateOnly = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        const firstDayOfYear = new Date(d.getFullYear(), 0, 1);
+        
+        // Dùng Math.round để triệt tiêu mọi sai số có thể xảy ra khi trừ thời gian (DST, Timezone)
+        const pastDays = Math.round((dateOnly - firstDayOfYear) / 86400000);
+        return Math.ceil((pastDays + firstDayOfYear.getDay() + 1) / 7).toString().padStart(2, '0');
+    }
+
+    const modelInput = document.getElementById("cmbTargetModel");
+    modelInput.addEventListener("change", function() {
+        this.blur();
+        document.getElementById("txtBarcode").focus();
+    });
+    modelInput.addEventListener("keydown", function(e) {
+        if (e.key === "Enter" || e.keyCode === 13) {
+            e.preventDefault();
+            this.blur();
+            document.getElementById("txtBarcode").focus();
+        }
+    });
+
+    const txtInput = document.getElementById("txtBarcode");
+    txtInput.addEventListener("keydown", function(e) {
+        if (e.key === "Enter" || e.keyCode === 13 || e.keyCode === 9 || e.keyCode === 10) {
+            e.preventDefault();
+            processBarcode(this.value);
+            this.value = "";
+        }
+    });
+
+    // =========================================================================
+    // LÕI XỬ LÝ POKA-YOKE (ĐÃ TỐI ƯU CÁCH XUỐNG DÒNG)
+    // =========================================================================
+    function processBarcode(rawScan) {
+        const resultBox = document.getElementById("resultBox");
+        const btnCopy = document.getElementById("btnCopyFormat");
+        const targetModel = document.getElementById("cmbTargetModel").value.trim().toUpperCase();
+
+        btnCopy.style.display = "none";
+        resultBox.className = "";
+        if (!rawScan) return;
+
+        let modeNote = "";
+        const isRework = document.getElementById("chkRework").checked;
+        const isNextShift = document.getElementById("chkNextShift").checked;
+        if (isRework) modeNote = "[REWORK] ";
+        else if (isNextShift) modeNote = "[GIAO CA] ";
+
+        let originalText = rawScan.replace(/\u00A0/g, " ").replace(/\t/g, " ");
+
+        if (originalText.startsWith(" ") || originalText.endsWith(" ")) {
+            showResult("NG", `NG - LỖI KHOẢNG TRẮNG ĐẦU/CUỐI!\nPhát hiện dấu cách thừa.\nChuỗi quét: [${originalText}]`);
+            sendWebhookLog(targetModel, originalText, "NG", modeNote + "Lỗi khoảng trắng đầu/cuối"); return;
+        }
+
+        originalText = restoreTelex(originalText.trim());
+
+        let barcodeType = "Không xác định";
+        if (originalText.startsWith("]") && originalText.length >= 3) {
+            let aimFull = originalText.substring(0, 3).toUpperCase();
+            let aimPrefix = aimFull.substring(0, 2);
+            switch(aimPrefix) {
+                case "]D": barcodeType = "Data Matrix (2D)"; break;
+                case "]C": barcodeType = "Code 128 (1D)"; break;
+                case "]A": barcodeType = "Code 39 (1D)"; break;
+                case "]Q": barcodeType = "QR Code (2D)"; break;
+                case "]L": barcodeType = "PDF417 (2D)"; break;
+                case "]I":
+                    let itfLen = originalText.substring(3).length;
+                    barcodeType = (itfLen === 14 && isAllDigits(originalText.substring(3))) ? "ITF-14" : `ITF (Sai độ dài: ${itfLen}/14)`;
+                    break;
+                case "]E":
+                    if (aimFull === "]E4") barcodeType = "EAN-8";
+                    else {
+                        let clen = originalText.substring(3).length;
+                        barcodeType = (clen===12)?"UPC-A" : (clen===13)?"EAN-13" : (clen===8)?"UPC-E" : `EAN/UPC (${aimFull})`;
+                    }
+                    break;
+                default: barcodeType = `Loại khác (${aimFull})`;
+            }
+            originalText = originalText.substring(3);
+        } else {
+            barcodeType = "Barcode Scanner chưa có AIM ID";
+        }
+
+        if (originalText.startsWith(" ")) {
+            showResult("NG", `NG - LỖI KHOẢNG TRẮNG SAU AIM ID!\nChuỗi quét: [${originalText}]`);
+            sendWebhookLog(targetModel, originalText, "NG", modeNote + "Lỗi dấu cách ẩn sau AIM ID"); return;
+        }
+
+        if (originalText !== originalText.toUpperCase()) {
+            showResult("NG", `NG - LỖI ĐỊNH DẠNG CHỮ!\nTem chứa chữ thường. Yêu cầu 100% IN HOA.\nChuỗi quét: [${originalText}]`);
+            sendWebhookLog(targetModel, originalText, "NG", modeNote + "Lỗi chữ thường"); return;
+        }
+
+        let rawText = originalText;
+
+        if (!targetModel) {
+            showResult("WARN", "NG - CHƯA CHỌN HOẶC NHẬP MÃ HÀNG!\nVui lòng gõ hoặc chọn Model trước khi quét tem.");
+            sendWebhookLog("NO_MODEL", rawText, "NG", modeNote + "Chưa chọn Model"); return;
+        }
+
+        let isSingleRetailBarcode = false;
+        if ((barcodeType === "EAN-13" || barcodeType === "UPC-A" || ((rawText.length === 12 || rawText.length === 13) && isAllDigits(rawText))) && !rawText.includes("|") && !rawText.includes(" ")) {
+            isSingleRetailBarcode = true;
+        }
+
+        let isITF14ShippingMark = false;
+        if ((barcodeType.startsWith("ITF-14") || (rawText.length === 14 && isAllDigits(rawText))) && !rawText.includes("|") && !rawText.includes(" ") && !rawText.startsWith("RG") && !rawText.startsWith("VZ") && !rawText.startsWith("YR")) {
+            isITF14ShippingMark = true;
+        }
+
+        let hasPipe = rawText.includes("|");
+        let parts = [];
+        
+        if (hasPipe) {
+            if (rawText.includes(" ")) {
+                showResult("NG", `NG - LỖI KHOẢNG TRẮNG TRONG TEM CÓ GẠCH ĐỨNG (|)!\nChuỗi quét: [${rawText}]`);
+                sendWebhookLog(targetModel, rawText, "NG", modeNote + "Lỗi dấu cách trong chuỗi Pipe"); return;
+            }
+            parts = rawText.split("|");
+        } else if (rawText.includes(" ")) {
+            if (rawText.includes("  ")) {
+                showResult("NG", `NG - LỖI DƯ KHOẢNG TRẮNG!\nTem chứa 2 dấu cách liên tiếp.\nChuỗi quét: [${rawText}]`);
+                sendWebhookLog(targetModel, rawText, "NG", modeNote + "Lỗi 2 dấu cách liên tiếp"); return;
+            }
+            if (rawText.startsWith("VZ") && rawText.charAt(6) === " " && (rawText.length === 13 || rawText.length === 14)) {
+                parts = [rawText];
+            } else {
+                parts = rawText.split(" ");
+            }
+        } else {
+            parts = [rawText];
+        }
+
+        let numP = parts.length;
+        let coreBarcode = "";
+        let coreIndex = -1;
+
+        if (!isSingleRetailBarcode && !isITF14ShippingMark) {
+            for (let i = 0; i < parts.length; i++) {
+                let p = parts[i].trim();
+                if (p.startsWith("RG") || p.substring(2, 4) === "RG" || p.startsWith("VZ") || p.startsWith("YR") || (p.length === 21 && !p.includes("RG") && !p.includes("VZ") && !p.includes("YR"))) {
+                    coreBarcode = p; coreIndex = i; break;
+                }
+            }
+            if (!coreBarcode) {
+                showResult("NG", `NG - KHÔNG TÌM THẤY MÃ VẠCH LÕI!\nTem in thiếu ký tự nhận diện (RG/VZ/YR).\nChuỗi quét: [${rawText}]`);
+                sendWebhookLog(targetModel, rawText, "NG", modeNote + "Thiếu mã lõi"); return;
+            }
+        }
+
+        let branchName = "";
+        let isFormatError = false;
+        let isCptOrFcPrefix = (coreBarcode.startsWith("VZ") || coreBarcode.startsWith("RG"));
+
+        if (isSingleRetailBarcode) {
+            branchName = (barcodeType === "Barcode Scanner chưa có AIM ID") ? (rawText.length === 13 ? "RETAIL BARCODE (EAN-13)" : "RETAIL BARCODE (UPC-A)") : `RETAIL BARCODE (${barcodeType})`;
+        } else if (isITF14ShippingMark) {
+            branchName = "SHIPPING MARK (ITF-14)";
+        } else if (coreBarcode.substring(2, 4) === "RG") {
+            if (numP === 1) { branchName = "FC ANZ SN"; if (coreBarcode.length !== 13 || hasPipe) isFormatError = true; } 
+            else { branchName = "FC ANZ RATING"; if (coreBarcode.length !== 13 || numP !== 2 || hasPipe) isFormatError = true; }
+        } else if (coreBarcode.length === 21 && !coreBarcode.startsWith("VZ") && !coreBarcode.startsWith("YR")) {
+            branchName = "FC EMEA SN"; if (numP !== 1 || hasPipe) isFormatError = true;
+        } else if (coreBarcode.startsWith("YR")) {
+            branchName = "KA FORMAT"; if (numP !== 1 || hasPipe || coreBarcode.length !== 10) isFormatError = true;
+        } else if (isCptOrFcPrefix) {
+            if (numP === 5) {
+                if (parts[0].trim() === "00") { branchName = "CPT ANZ SN"; if (coreBarcode.length !== 16) isFormatError = true; }
+                else if (parts[0].trim() === "01") { branchName = "CPT ANZ SHIPPING MARK"; if (coreBarcode.length !== 12) isFormatError = true; }
+                else { branchName = "CPT ANZ SN"; isFormatError = true; }
+            } else if (numP === 7) {
+                if (parts[0].trim() === "00") { branchName = "CPT EMEA SN"; if (coreBarcode.length !== 16) isFormatError = true; }
+                else if (parts[0].trim() === "01") { branchName = "CPT EMEA SHIPPING MARK"; if (coreBarcode.length !== 12) isFormatError = true; }
+                else { branchName = "CPT EMEA SN"; isFormatError = true; }
+            } else if (numP === 2 || numP === 3) {
+                if (coreBarcode.length <= 14) {
+                    branchName = hasPipe ? "CPT US RATING" : (coreBarcode.startsWith("RG") ? "FC US RATING" : "CPT US RATING");
+                    if (coreBarcode.length !== 14) isFormatError = true;
+                } else if (coreBarcode.length <= 16) {
+                    branchName = "CPT ANZ RATING"; if (coreBarcode.length !== 16) isFormatError = true;
+                } else {
+                    branchName = "CPT EMEA RATING"; if (coreBarcode.length < 24 || coreBarcode.length > 26) isFormatError = true;
+                }
+            } else if (numP === 1) {
+                if (coreBarcode.length === 13 && coreBarcode.charAt(6) === " ") branchName = "CPT US SN";
+                else if (coreBarcode.length === 14 && !coreBarcode.includes(" ") && !hasPipe) branchName = "FC US SN";
+                else if (coreBarcode.includes(" ") || coreBarcode.length < 15) { branchName = "CPT US SN"; isFormatError = true; }
+                else { branchName = "CPT ANZ SN"; isFormatError = true; }
+            } else {
+                branchName = "CPT US RATING"; isFormatError = true;
+            }
+        }
+
+        let t_SKU = "", t_Model = "", t_EAN = "", t_Qty = "", t_Console = "", t_Doc = "", t_FW = "", t_Line = "", t_Prefix = "";
+        
+        switch (branchName) {
+            case "FC US RATING":
+                if (numP > coreIndex + 1) t_SKU = parts[coreIndex + 1].trim();
+                if (numP > coreIndex + 2) t_FW = parts[coreIndex + 2].trim();
+                break;
+            case "FC ANZ RATING":
+                if (numP > coreIndex + 1) t_SKU = parts[coreIndex + 1].trim();
+                break;
+            case "FC EMEA SN":
+                if (coreBarcode.length >= 12) t_Prefix = coreBarcode.substring(0, 12);
+                break;
+            case "CPT US RATING": case "CPT ANZ RATING": case "CPT EMEA RATING":
+                if (numP === 3) { t_Model = parts[0].trim(); t_SKU = parts[2].trim(); }
+                else if (numP === 2) { t_SKU = parts[(coreIndex === 0) ? 1 : 0].trim(); }
+                
+                if (branchName === "CPT EMEA RATING" && coreBarcode.length >= 18) {
+                    t_Line = coreBarcode.substring(8, 10);
+                    t_Console = coreBarcode.substring(10, 16);
+                    t_Doc = coreBarcode.substring(16, 18);
+                }
+                break;
+            case "CPT ANZ SN": case "CPT ANZ SHIPPING MARK":
+                if (numP >= 5) { t_Qty = parts[1].trim(); t_Model = parts[3].trim(); t_SKU = parts[4].trim(); }
+                break;
+            case "CPT EMEA SN": case "CPT EMEA SHIPPING MARK":
+                if (numP >= 7) { t_EAN = parts[2].trim(); t_Qty = parts[3].trim(); t_Model = parts[5].trim(); t_SKU = parts[6].trim(); }
+                break;
+        }
+
+        let sysTime = new Date();
+        let currentHour = sysTime.getHours();
+        let a_Year, a_Week, a_Day, a_Shift;
+
+        if (!isSingleRetailBarcode && !isITF14ShippingMark) {
+            if (isRework) {
+                let needDayShift = !["CPT US SN", "CPT EMEA SHIPPING MARK", "CPT ANZ SHIPPING MARK", "KA FORMAT"].includes(branchName);
+                
+                let valY = document.getElementById("cmbRYear").value;
+                let valW = document.getElementById("cmbRWeek").value;
+                let valD = document.getElementById("cmbRDay").value;
+                let valS = document.getElementById("cmbRShift").value;
+
+                if (!valY || !valW || (needDayShift && (!valD || !valS))) {
+                    showResult("WARN", `NG - THIẾU THÔNG TIN REWORK!\nVui lòng chọn đủ ${needDayShift?"Năm, Tuần, Thứ, Ca":"Năm, Tuần"} trên giao diện.`);
+                    sendWebhookLog(targetModel, rawText, "NG", modeNote + "Thiếu Rework Input"); return;
+                }
+                a_Year = valY.slice(-2);
+                a_Week = valW;
+                if (needDayShift) { a_Day = valD; a_Shift = valS; } 
+                else { a_Day = ""; a_Shift = ""; }
+            } else {
+                a_Shift = (currentHour >= 7 && currentHour < 19) ? "D" : "N";
+                if (currentHour < 7) sysTime.setDate(sysTime.getDate() - 1);
+
+                if (isNextShift) {
+                    if (a_Shift === "D") a_Shift = "N";
+                    else if (a_Shift === "N") { a_Shift = "D"; sysTime.setDate(sysTime.getDate() + 1); }
+                    if (document.getElementById("chkOffSunday").checked && sysTime.getDay() === 0) sysTime.setDate(sysTime.getDate() + 1);
+                }
+                a_Year = sysTime.getFullYear().toString().slice(-2);
+                a_Week = getVBAWeekNum(sysTime);
+                a_Day = sysTime.getDay().toString();
+            }
+        }
+
+        let a_YearCode = { "25":"E", "26":"F", "27":"G", "28":"H", "29":"J", "30":"K" }[a_Year] || "?";
+        let cptPrefix = (parseInt(a_Year) > 26 || (parseInt(a_Year) === 26 && parseInt(a_Week) >= 40)) ? "RG" : "VZ";
+
+        let b_Year = "", b_Week = "", b_Day = "", b_Shift = "", idealCore = "";
+        
+        switch (branchName) {
+            case "FC US SN": case "FC US RATING": case "CPT US RATING":
+                if (coreBarcode.length >= 4) b_Year = coreBarcode.substring(2, 4);
+                if (coreBarcode.length >= 6) b_Week = coreBarcode.substring(4, 6);
+                if (coreBarcode.length >= 7) b_Day = coreBarcode.substring(6, 7);
+                if (coreBarcode.length >= 8) b_Shift = coreBarcode.substring(7, 8);
+                idealCore = coreBarcode.substring(0,2) + a_Year + a_Week + a_Day + a_Shift + coreBarcode.substring(8);
+                if (coreBarcode.length === 14) idealCore = coreBarcode.substring(0,2) + a_Year + a_Week + a_Day + a_Shift + coreBarcode.slice(-6);
+                break;
+            case "CPT US SN":
+                if (coreBarcode.length >= 4) b_Year = coreBarcode.substring(2, 4);
+                if (coreBarcode.length >= 6) b_Week = coreBarcode.substring(4, 6);
+                idealCore = cptPrefix + a_Year + a_Week + " " + coreBarcode.substring(7);
+                if (coreBarcode.length === 13 && coreBarcode.charAt(6) === " ") idealCore = cptPrefix + a_Year + a_Week + " " + coreBarcode.slice(-6);
+                break;
+            case "FC ANZ SN": case "FC ANZ RATING":
+                if (coreBarcode.length >= 6) b_Year = coreBarcode.substring(4, 6);
+                if (coreBarcode.length >= 8) b_Week = coreBarcode.substring(6, 8);
+                idealCore = coreBarcode.substring(0,4) + a_Year + a_Week + coreBarcode.substring(8);
+                if (coreBarcode.length === 13) idealCore = coreBarcode.substring(0,4) + a_Year + a_Week + coreBarcode.slice(-5);
+                break;
+            case "FC EMEA SN":
+                if (coreBarcode.length >= 14) b_Week = coreBarcode.substring(12, 14);
+                if (coreBarcode.length >= 16) b_Year = coreBarcode.substring(14, 16);
+                idealCore = coreBarcode.substring(0,12) + a_Week + a_Year + coreBarcode.substring(16);
+                if (coreBarcode.length === 21) idealCore = coreBarcode.substring(0,12) + a_Week + a_Year + coreBarcode.slice(-5);
+                break;
+            case "CPT ANZ SN": case "CPT ANZ RATING": case "CPT EMEA SN":
+                if (coreBarcode.length >= 4) b_Year = coreBarcode.substring(2, 4);
+                if (coreBarcode.length >= 6) b_Week = coreBarcode.substring(4, 6);
+                if (coreBarcode.length >= 7) b_Day = coreBarcode.substring(6, 7);
+                if (coreBarcode.length >= 8) b_Shift = coreBarcode.substring(7, 8);
+                idealCore = cptPrefix + a_Year + a_Week + a_Day + a_Shift + coreBarcode.substring(8);
+                if (coreBarcode.length === 16) idealCore = cptPrefix + a_Year + a_Week + a_Day + a_Shift + coreBarcode.slice(-8);
+                break;
+            case "CPT EMEA RATING":
+                if (coreBarcode.length >= 4) b_Year = coreBarcode.substring(2, 4);
+                if (coreBarcode.length >= 6) b_Week = coreBarcode.substring(4, 6);
+                if (coreBarcode.length >= 7) b_Day = coreBarcode.substring(6, 7);
+                if (coreBarcode.length >= 8) b_Shift = coreBarcode.substring(7, 8);
+                idealCore = cptPrefix + a_Year + a_Week + a_Day + a_Shift + coreBarcode.substring(8);
+                break;
+            case "CPT EMEA SHIPPING MARK": case "CPT ANZ SHIPPING MARK":
+                if (coreBarcode.length >= 4) b_Year = coreBarcode.substring(2, 4);
+                if (coreBarcode.length >= 6) b_Week = coreBarcode.substring(4, 6);
+                idealCore = cptPrefix + a_Year + a_Week + coreBarcode.substring(6);
+                if (coreBarcode.length === 12) idealCore = cptPrefix + a_Year + a_Week + coreBarcode.slice(-6);
+                break;
+            case "KA FORMAT":
+                if (coreBarcode.length >= 3) b_Year = coreBarcode.substring(2, 3);
+                if (coreBarcode.length >= 5) b_Week = coreBarcode.substring(3, 5);
+                idealCore = coreBarcode.substring(0,2) + a_YearCode + a_Week + coreBarcode.substring(5);
+                if (coreBarcode.length === 10) idealCore = coreBarcode.substring(0,2) + a_YearCode + a_Week + coreBarcode.slice(-5);
+                break;
+        }
+
+        let isPass = true;
+        let errDetails = "";
+        let okDetails = "";
+
+        if (!isSingleRetailBarcode && !isITF14ShippingMark) {
+            okDetails = `Năm: ${b_Year} | Tuần: ${b_Week}`;
+            if (isFormatError) { isPass = false; errDetails += "[!] LỖI CẤU TRÚC TEM (Sai độ dài hoặc sai định dạng)\n"; }
+
+            let targetYear = (branchName === "KA FORMAT") ? a_YearCode : a_Year;
+            if (b_Year && b_Year !== targetYear) { isPass = false; errDetails += `[-] Năm: In sai [${b_Year}] -> Đúng là [${targetYear}]\n`; }
+            if (b_Week && b_Week !== a_Week) { isPass = false; errDetails += `[-] Tuần: In sai [${b_Week}] -> Đúng là [${a_Week}]\n`; }
+
+            if (branchName.includes("CPT") && coreBarcode.startsWith("VZ") && cptPrefix === "RG") {
+                isPass = false; errDetails += "[-] LỖI TIỀN TỐ: Từ Tuần 40/2026, CPT phải dùng [RG]. Không dùng [VZ]!\n";
+            }
+
+            const dayNames = ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
+            let skipDayCheck = ["FC ANZ SN", "FC ANZ RATING", "FC EMEA SN", "CPT US SN", "CPT EMEA SHIPPING MARK", "CPT ANZ SHIPPING MARK", "KA FORMAT"].includes(branchName);
+
+            if (b_Day) {
+                let dNum = parseInt(b_Day);
+                let b_DayName = (!isNaN(dNum) && dNum <= 6) ? dayNames[dNum].replace(" ", "\xA0") : "Lỗi";
+                okDetails += ` | ${b_DayName}`;
+                if (b_Day !== a_Day) { isPass = false; errDetails += `[-] Thứ: In sai [${b_DayName}] -> Đúng là [${dayNames[parseInt(a_Day)]}]\n`; }
+            } else if (!skipDayCheck) { isPass = false; errDetails += "[-] Thiếu thông tin Thứ trên tem.\n"; }
+
+            if (b_Shift) {
+                let b_ShiftName = (b_Shift === "D") ? "Ca\xA0Ngày" : (b_Shift === "N" ? "Ca\xA0Đêm" : b_Shift);
+                okDetails += ` | ${b_ShiftName}`;
+                if (b_Shift !== a_Shift) { isPass = false; errDetails += `[-] Ca: In sai [${b_ShiftName}] -> Đúng là [${a_Shift==="D"?"Ca\xA0Ngày":"Ca\xA0Đêm"}]\n`; }
+            } else if (!skipDayCheck) { isPass = false; errDetails += "[-] Thiếu thông tin Ca trên tem.\n"; }
+        }
+
+        let masterDataError = false;
+        let matchedRows = masterDataRAM.filter(r => (r["Model_Number (Cot C)"] || "").toString().trim().toUpperCase() === targetModel);
+        
+        let modelsFound = matchedRows.length;
+        let isAnyRowPass = false;
+        let firstRowErrDetails = "";
+        let listAllowedEAN = [], listAllowedGTIN = [];
+        let m_SKU_SN, m_SKU_Rating, m_Model, m_EAN, m_Console, m_Doc, m_FW, m_Qty, m_Prefix, m_GTIN;
+
+        for (let j = 0; j < modelsFound; j++) {
+            let row = matchedRows[j];
+            let tempErr = "";
+            let tempPass = true;
+
+            let t_m_SKU_SN = (row["SKU SN"] || "").toString().trim().toUpperCase();
+            let t_m_SKU_Rating = (row["SKU Rating (Cot A)"] || "").toString().trim().toUpperCase();
+            let t_m_Model = (row["Model_Number (Cot C)"] || "").toString().trim().toUpperCase();
+            let t_m_EAN = (row["EAN_UPC_Code (Cot D)"] || "").toString().trim().toUpperCase();
+            let t_m_Console = (row["Console_Code (Cot E)"] || "").toString().trim().toUpperCase();
+            let t_m_Doc = (row["Doc_Version (Cot F)"] || "").toString().trim().toUpperCase();
+            let t_m_FW = (row["Firmware (Cot G)"] || "").toString().trim().toUpperCase();
+            let t_m_Qty = (row["Qty (Cot H)"] || "").toString().trim().toUpperCase();
+            let t_m_Prefix = (row["Prefix_FC_EMEA (Cot J)"] || "").toString().trim().toUpperCase();
+            let t_m_GTIN = (row["GTIN-14 (Cot K)"] || "").toString().trim().toUpperCase();
+
+            if (t_m_EAN) listAllowedEAN.push(`[${t_m_EAN}]`);
+            if (t_m_GTIN) listAllowedGTIN.push(`[${t_m_GTIN}]`);
+
+            if (isSingleRetailBarcode) {
+                if (!t_m_EAN) { tempPass = false; tempErr += "[-] MasterData chưa khai báo EAN/UPC.\n"; }
+                else if (rawText !== t_m_EAN) { tempPass = false; tempErr += `[-] Mã EAN/UPC trên hộp sai: Quét [${rawText}] -> Yêu cầu [${t_m_EAN}]\n`; }
+            } else if (isITF14ShippingMark) {
+                if (!t_m_GTIN) { tempPass = false; tempErr += "[-] MasterData chưa khai báo GTIN-14.\n"; }
+                else if (rawText !== t_m_GTIN) { tempPass = false; tempErr += `[-] GTIN-14 Shipping Mark sai: Quét [${rawText}] -> Yêu cầu [${t_m_GTIN}]\n`; }
+            } else {
+                if (branchName === "FC EMEA SN" && t_m_Prefix && t_Prefix && t_Prefix !== t_m_Prefix) {
+                    tempPass = false; tempErr += `[-] Tiền tố 12 số sai: In [${t_Prefix}] -> Đúng là [${t_m_Prefix}]\n`;
+                }
+                if ((branchName === "CPT EMEA SN" || branchName === "CPT ANZ SN") && t_Qty !== "01") {
+                    tempPass = false; tempErr += `[-] Số lượng Unit sai: In [${t_Qty}] -> Đúng phải là [01]\n`;
+                }
+                if (branchName === "CPT ANZ SHIPPING MARK") {
+                    if (t_m_Qty && t_Qty !== t_m_Qty) { tempPass = false; tempErr += `[-] Q'ty sai: In [${t_Qty}] -> Đúng là [${t_m_Qty}]\n`; }
+                    else if (!t_Qty) { tempPass = false; tempErr += "[-] Thiếu Q'ty trên tem.\n"; }
+                }
+                if (t_SKU) {
+                    let expectedSKU = branchName.includes("RATING") ? t_m_SKU_Rating : t_m_SKU_SN;
+                    if (expectedSKU && t_SKU !== expectedSKU) { tempPass = false; tempErr += `[-] SKU sai: In [${t_SKU}] -> Đúng là [${expectedSKU}]\n`; }
+                } else if (!["FC US SN", "FC ANZ SN", "FC EMEA SN", "CPT US SN", "CPT ANZ SN", "KA FORMAT"].includes(branchName)) {
+                    tempPass = false; tempErr += "[-] Thiếu SKU trên tem.\n";
+                }
+                
+                if (branchName === "FC US RATING") {
+                    if (t_m_FW) {
+                        if (!t_FW) { tempPass = false; tempErr += `[-] Thiếu Firmware trên tem! Phải in: [${t_m_FW}]\n`; }
+                        else if (t_FW !== t_m_FW) { tempPass = false; tempErr += `[-] Firmware sai: In [${t_FW}] -> Đúng là [${t_m_FW}]\n`; }
+                    } else if (t_FW) {
+                        tempPass = false; tempErr += `[-] Thừa Firmware trên tem! In: [${t_FW}]\n`;
+                    }
+                }
+                
+                if (t_Model && t_m_Model && t_Model !== t_m_Model) { tempPass = false; tempErr += `[-] Model sai: In [${t_Model}] -> Đúng là [${t_m_Model}]\n`; }
+                if (t_EAN && t_m_EAN && t_EAN !== t_m_EAN) { tempPass = false; tempErr += `[-] EAN sai: In [${t_EAN}] -> Đúng là [${t_m_EAN}]\n`; }
+                if (t_Console && t_m_Console && t_Console !== t_m_Console) { tempPass = false; tempErr += `[-] Console sai: In [${t_Console}] -> Đúng là [${t_m_Console}]\n`; }
+                if (t_Doc && t_m_Doc && t_Doc !== t_m_Doc) { tempPass = false; tempErr += `[-] Doc sai: In [${t_Doc}] -> Đúng là [${t_m_Doc}]\n`; }
+            }
+
+            if (tempPass) {
+                isAnyRowPass = true;
+                m_SKU_SN = t_m_SKU_SN; m_SKU_Rating = t_m_SKU_Rating; m_Model = t_m_Model; m_EAN = t_m_EAN;
+                m_Console = t_m_Console; m_Doc = t_m_Doc; m_FW = t_m_FW; m_Qty = t_m_Qty; m_Prefix = t_m_Prefix; m_GTIN = t_m_GTIN;
+                break;
+            } else if (j === 0) {
+                firstRowErrDetails = tempErr;
+                m_SKU_SN = t_m_SKU_SN; m_SKU_Rating = t_m_SKU_Rating; m_Model = t_m_Model; m_EAN = t_m_EAN;
+                m_Console = t_m_Console; m_Doc = t_m_Doc; m_FW = t_m_FW; m_Qty = t_m_Qty; m_Prefix = t_m_Prefix; m_GTIN = t_m_GTIN;
+            }
+        }
+
+        if (modelsFound > 0) {
+            if (!isAnyRowPass) {
+                isPass = false; masterDataError = true;
+                if (isSingleRetailBarcode && modelsFound > 1) errDetails += `[-] Mã EAN/UPC trên hộp sai! Combo Kit chấp nhận các mã: ${listAllowedEAN.join(", ")}\n`;
+                else if (isITF14ShippingMark && modelsFound > 1) errDetails += `[-] Mã GTIN-14 sai! Combo Kit chấp nhận các mã: ${listAllowedGTIN.join(", ")}\n`;
+                else errDetails += firstRowErrDetails;
+            }
+        } else {
+            isPass = false; masterDataError = true; errDetails += `[?] Không tìm thấy Model [${targetModel}] trong MasterData.\n`;
+        }
+
+        let templateRaw = "";
+        if (isSingleRetailBarcode) templateRaw = (listAllowedEAN.length > 0) ? `Yêu cầu mã hộp phải là: ${listAllowedEAN.join(", ")}` : "Chưa khai báo EAN/UPC trong MasterData!";
+        else if (isITF14ShippingMark) templateRaw = (listAllowedGTIN.length > 0) ? `Yêu cầu mã Shipping Mark phải là: ${listAllowedGTIN.join(", ")}` : "Chưa khai báo GTIN-14 trong MasterData!";
+        else {
+            let d_SKU = branchName.includes("RATING") ? (m_SKU_Rating || "SKU") : (m_SKU_SN || "SKU");
+            let d_Model = m_Model || "Model"; let d_EAN = m_EAN || "EAN"; let d_FW = m_FW ? (" " + m_FW) : "";
+            let d_Console = m_Console || "(Console)"; let d_Doc = m_Doc || "(Doc)"; let d_Prefix = m_Prefix || "xxxxxxxxxxxx";
+            let d_Qty = (m_Qty && branchName === "CPT ANZ SHIPPING MARK") ? m_Qty : (t_Qty || "Qty");
+
+            if (isFormatError) {
+                switch(branchName) {
+                    case "FC US SN": templateRaw = `RG${a_Year}${a_Week}${a_Day}${a_Shift}(Line)xxxx (Tổng 14 ký tự)`; break;
+                    case "FC US RATING": templateRaw = `RG${a_Year}${a_Week}${a_Day}${a_Shift}(Line)xxxx ${d_SKU}${d_FW}`; break;
+                    case "FC ANZ SN": templateRaw = `xxRG${a_Year}${a_Week}xxxxx (Tổng 13 ký tự)`; break;
+                    case "FC ANZ RATING": templateRaw = `xxRG${a_Year}${a_Week}xxxxx ${d_SKU}`; break;
+                    case "FC EMEA SN": templateRaw = `${d_Prefix}${a_Week}${a_Year}xxxxx (Tổng 21 ký tự)`; break;
+                    case "CPT US SN": templateRaw = `${cptPrefix}${a_Year}${a_Week} xxxxxx (Lưu ý KHOẢNG TRẮNG)`; break;
+                    case "CPT US RATING": templateRaw = hasPipe ? `${d_Model}|${cptPrefix}${a_Year}${a_Week}${a_Day}${a_Shift}xxxxxx|${d_SKU}` : `${cptPrefix}${a_Year}${a_Week}${a_Day}${a_Shift}xxxxxx ${d_SKU}`; break;
+                    case "CPT ANZ SN": templateRaw = `00|01|${cptPrefix}${a_Year}${a_Week}${a_Day}${a_Shift}(Line)xxxxxx|${d_Model}|${d_SKU}`; break;
+                    case "CPT ANZ RATING": templateRaw = hasPipe ? `${d_Model}|${cptPrefix}${a_Year}${a_Week}${a_Day}${a_Shift}(Line)xxxxxx|${d_SKU}` : `${cptPrefix}${a_Year}${a_Week}${a_Day}${a_Shift}(Line)xxxxxx ${d_SKU}`; break;
+                    case "CPT ANZ SHIPPING MARK": templateRaw = `01|${d_Qty}|${cptPrefix}${a_Year}${a_Week}xxxxxx|${d_Model}|${d_SKU}`; break;
+                    case "CPT EMEA SN": templateRaw = `00|01|${d_EAN}|01|${cptPrefix}${a_Year}${a_Week}${a_Day}${a_Shift}xxxxxxxx|${d_Model}|${d_SKU}`; break;
+                    case "CPT EMEA RATING": templateRaw = hasPipe ? `${d_Model}|${cptPrefix}${a_Year}${a_Week}${a_Day}${a_Shift}(Line)${d_Console}${d_Doc}xxxxxx|${d_SKU}` : `${cptPrefix}${a_Year}${a_Week}${a_Day}${a_Shift}(Line)${d_Console}${d_Doc}xxxxxx ${d_SKU}`; break;
+                    case "CPT EMEA SHIPPING MARK": templateRaw = `01|01|${d_EAN}|${d_Qty}|${cptPrefix}${a_Year}${a_Week}xxxxxx|${d_Model}|${d_SKU}`; break;
+                    case "KA FORMAT": templateRaw = `YR${a_YearCode}${a_Week}xxxxx (Tổng 10 ký tự)`; break;
+                }
+            } else {
+                switch(branchName) {
+                    case "FC US SN": case "FC ANZ SN": case "CPT US SN": case "KA FORMAT": templateRaw = idealCore; break;
+                    case "FC US RATING": templateRaw = `${idealCore} ${d_SKU}${d_FW}`; break;
+                    case "FC ANZ RATING": templateRaw = `${idealCore} ${d_SKU}`; break;
+                    case "FC EMEA SN": templateRaw = `${m_Prefix || idealCore.substring(0,12)}${a_Week}${a_Year}${idealCore.slice(-5)}`; break;
+                    case "CPT US RATING": case "CPT ANZ RATING": templateRaw = hasPipe ? `${d_Model}|${idealCore}|${d_SKU}` : `${idealCore} ${d_SKU}`; break;
+                    case "CPT ANZ SN": templateRaw = `00|01|${idealCore}|${d_Model}|${d_SKU}`; break;
+                    case "CPT ANZ SHIPPING MARK": templateRaw = `01|${d_Qty}|${idealCore}|${d_Model}|${d_SKU}`; break;
+                    case "CPT EMEA SN": templateRaw = `00|01|${d_EAN}|01|${idealCore}|${d_Model}|${d_SKU}`; break;
+                    case "CPT EMEA SHIPPING MARK": templateRaw = `01|01|${d_EAN}|${d_Qty}|${idealCore}|${d_Model}|${d_SKU}`; break;
+                    case "CPT EMEA RATING": 
+                        let c_Line = coreBarcode.length >= 10 ? coreBarcode.substring(8, 10) : "01";
+                        let c_Serial = coreBarcode.length >= 19 ? coreBarcode.substring(18) : "xxxxxx";
+                        let fEmea = `${cptPrefix}${a_Year}${a_Week}${a_Day}${a_Shift}${c_Line}${d_Console}${d_Doc}${c_Serial}`;
+                        templateRaw = hasPipe ? `${d_Model}|${fEmea}|${d_SKU}` : `${fEmea} ${d_SKU}`;
+                        break;
+                }
+            }
+        }
+
+        if (isPass && !isFormatError) {
+            let passMsg = "";
+            if (isSingleRetailBarcode) passMsg = `PASS - MÃ EAN/UPC\nLoại mã: ${barcodeType}\nMã quét: ${rawText}\nKhớp MasterData: ${m_EAN}`;
+            else if (isITF14ShippingMark) passMsg = `PASS - SHIPPING MARK\nLoại mã: ${barcodeType}\nMã quét: ${rawText}\nKhớp MasterData GTIN-14: ${m_GTIN}`;
+            else {
+                passMsg = `PASS - ${branchName}\nLoại mã vạch: ${barcodeType}\nMã quét: ${rawText}\nOK: ${okDetails}`;
+                if (branchName === "FC EMEA SN" && m_Prefix) passMsg += `\nPrefix match: ${m_Prefix}`;
+                if (t_SKU) passMsg += `\nSKU match: ${branchName.includes("RATING") ? m_SKU_Rating : m_SKU_SN}`;
+                if (t_FW) passMsg += `\nFirmware match: ${t_FW}`;
+            }
+            
+            showResult("PASS", passMsg);
+            currentIdealFormat = ""; btnCopy.style.display = "none";
+            sendWebhookLog(targetModel, rawText, "PASS", modeNote + `[${branchName} | ${barcodeType}] - Formatted OK`);
+        } else {
+            let finalMsg = `NG - SAI THÔNG TIN ${branchName}!\nLoại mã vạch: ${barcodeType}\n${errDetails}\n\n>>> GỢI Ý CẤU TRÚC TEM CHUẨN:\n${templateRaw}`;
+            currentIdealFormat = templateRaw;
+            showResult("NG", finalMsg);
+            btnCopy.style.display = "block";
+            sendWebhookLog(targetModel, rawText, "NG", modeNote + `[${branchName} | ${barcodeType}] ${errDetails.replace(/\n/g, " | ")}`);
+        }
+    }
+
+    function showResult(status, msg) {
+        const box = document.getElementById("resultBox");
+        box.innerText = msg;
+        box.className = (status === "PASS") ? "result-pass" : (status === "WARN" ? "result-warn" : "result-ng");
+        playSound(status);
+    }
+
+    function copyFormat() {
+        if (!currentIdealFormat) return;
+        navigator.clipboard.writeText(currentIdealFormat).then(() => { alert("Đã copy cấu trúc chuẩn:\n" + currentIdealFormat); });
+    }
+
+    // =========================================================================
+    // GỬI LOG OFFLINE VÀ GẮN BIẾN pcname LÊN WEBHOOK
+    // =========================================================================
+    async function sendWebhookLog(model, scan, result, details) {
+        const payload = { 
+            dateTime: getLocalTimeString(), 
+            model: model, 
+            barcode: scan, 
+            result: result, 
+            version: "WEB-MOBILE-V1.0", 
+            details: details,
+            pcname: currentMachineID 
+        };
+
+        try {
+            const resp = await fetch(WEBHOOK_LOG_URL, {
+                method: "POST", 
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            if (!resp.ok) throw new Error("HTTP Lỗi");
+            syncOfflineLogs(); 
+        } catch (err) {
+            console.warn("Mất mạng, lưu log Offline:", err);
+            offlineLogsQueue.push(payload);
+            localStorage.setItem("OFFLINE_LOGS_QUEUE", JSON.stringify(offlineLogsQueue));
+            updateOfflineUI();
+        }
+    }
+</script>
+
+</body>
+</html>
