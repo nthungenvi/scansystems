@@ -264,7 +264,7 @@
             border: 2px solid #555; 
             background: #222; 
             margin-top: 10px;
-            word-break: break-word; /* QUAN TRỌNG: Không dùng break-all */
+            word-break: break-word; 
             overflow-wrap: break-word;
         }
         .result-pass { background-color: #28a745 !important; color: white !important; border-color: #1e7e34 !important; }
@@ -677,11 +677,14 @@
             osc.connect(gain);
             gain.connect(audioCtx.destination);
             if (type === 'PASS') {
-                osc.frequency.value = 2000; osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+                osc.frequency.value = 2000; 
+                osc.start(); osc.stop(audioCtx.currentTime + 0.15);
             } else if(type === 'WARN') {
-                osc.frequency.value = 800; osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+                osc.frequency.value = 800; 
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
             } else {
-                osc.frequency.value = 500; osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+                osc.frequency.value = 500;  
+                osc.start(); osc.stop(audioCtx.currentTime + 0.5);
             }
         } catch (e) { console.error("Audio Error:", e); }
     }
@@ -815,7 +818,7 @@
     });
 
     // =========================================================================
-    // LÕI XỬ LÝ POKA-YOKE (ĐÃ TỐI ƯU CÁCH XUỐNG DÒNG)
+    // LÕI XỬ LÝ POKA-YOKE (ĐÃ SỬA LỖI CPT SN PREFIX RG)
     // =========================================================================
     function processBarcode(rawScan) {
         const resultBox = document.getElementById("resultBox");
@@ -910,7 +913,9 @@
                 showResult("NG", `NG - LỖI DƯ KHOẢNG TRẮNG!\nTem chứa 2 dấu cách liên tiếp.\nChuỗi quét: [${rawText}]`);
                 sendWebhookLog(targetModel, rawText, "NG", modeNote + "Lỗi 2 dấu cách liên tiếp"); return;
             }
-            if (rawText.startsWith("VZ") && rawText.charAt(6) === " " && (rawText.length === 13 || rawText.length === 14)) {
+            
+            // FIX LỖI CPT SN ĐỔI SANG RG (Tuần 40): Chặn không cho split nếu nó là CPT SN
+            if ((rawText.startsWith("VZ") || rawText.startsWith("RG")) && rawText.charAt(6) === " " && (rawText.length === 13 || rawText.length === 14)) {
                 parts = [rawText];
             } else {
                 parts = rawText.split(" ");
@@ -1112,7 +1117,6 @@
         let okDetails = "";
 
         if (!isSingleRetailBarcode && !isITF14ShippingMark) {
-            // Sử dụng \xA0 để gắn chặt các từ khóa lại với nhau
             okDetails = `Năm:\xA0${b_Year} | Tuần:\xA0${b_Week}`;
             if (isFormatError) { isPass = false; errDetails += "[!] LỖI CẤU TRÚC TEM (Sai độ dài hoặc sai định dạng)\n"; }
 
@@ -1131,7 +1135,6 @@
                 let dNum = parseInt(b_Day);
                 let b_DayName = (!isNaN(dNum) && dNum <= 6) ? dayNames[dNum].replace(" ", "\xA0") : "Lỗi";
                 
-                // Ép xuống dòng để không bị dồn 1 cục dài
                 okDetails += `\nNgày/Ca: ${b_DayName}`;
                 
                 if (b_Day !== a_Day) { isPass = false; errDetails += `[-] Thứ: In sai [${b_DayName}] -> Đúng là [${dayNames[parseInt(a_Day)]}]\n`; }
