@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>HỆ THỐNG KIỂM TRA TEM (WEB)</title>
+    <!-- THƯ VIỆN QUÉT MÃ HTML5-QRCODE -->
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
@@ -66,6 +67,7 @@
         </div>
     </div>
 
+    <!-- KHỐI CHỨC NĂNG GIAO CA & REWORK -->
     <div class="advanced-controls">
         <div class="chk-group">
             <label><input type="checkbox" id="chkNextShift" onchange="toggleNextShift()"> GIAO CA (NEXT SHIFT)</label>
@@ -97,12 +99,14 @@
         </div>
     </div>
 
+    <!-- Ô CHỌN HOẶC GÕ MODEL -->
     <div class="form-row">
         <label for="cmbTargetModel">1. CHỌN HOẶC GÕ MÃ HÀNG (MODEL):</label>
         <input type="text" id="cmbTargetModel" list="modelList" placeholder="Gõ tìm kiếm hoặc bấm đúp để chọn Model..." autocomplete="off">
         <datalist id="modelList"></datalist>
     </div>
 
+    <!-- Ô QUÉT MÃ VÀ NÚT CAMERA -->
     <div class="form-row">
         <label for="txtBarcode">2. QUÉT MÃ TEM (HOẶC NHẬP RỒI ẤN ENTER):</label>
         <div class="input-group">
@@ -110,6 +114,7 @@
             <button id="btnToggleCam" class="btn-cam-trigger" onclick="toggleCamera()">📷 MỞ CAMERA</button>
         </div>
         
+        <!-- KHUNG CAMERA NÂNG CAO VỚI ZOOM, FLASH & CHẠM LẤY NÉT -->
         <div id="cameraContainer">
             <div id="reader"></div>
             <div id="focusIndicator"></div>
@@ -198,7 +203,7 @@
                 html5QrCode.stop().then(() => {
                     html5QrCode.clear();
                     camBox.style.display = "none";
-                    btn.innerText = "📷 MỞ CAMERA";
+                    btn.innerText = "📷 M mở CAMERA";
                     btn.classList.remove("active");
                     isCameraOpen = false;
                     isTorchOn = false;
@@ -542,7 +547,7 @@
     });
 
     // =========================================================================
-    // LÕI XỬ LÝ POKA-YOKE (ĐÃ GOM KHAI BÁO BIẾN LÊN ĐẦU ĐỂ TRÁNH TRÙNG LẶP)
+    // LÕI XỬ LÝ POKA-YOKE
     // =========================================================================
     function processBarcode(rawScan) {
         // --- KHAI BÁO TOÀN BỘ BIẾN TẠI ĐÂY ĐỂ ĐẢM BẢO BLOCK-SCOPE ---
@@ -728,7 +733,8 @@
                         branchName = "CPT US RATING";
                     } else {
                         if (coreBarcode.startsWith("RG")) {
-                            branchName = "FC US RATING";
+                            // Can't assign cptPrefix yet (calculated below), will refine branchName later based on a_Year
+                            branchName = "US RATING (FC/CPT)"; 
                         } else {
                             branchName = "CPT US RATING";
                         }
@@ -751,6 +757,7 @@
 
         switch (branchName) {
             case "FC US RATING":
+            case "US RATING (FC/CPT)":
                 if (numP > coreIndex + 1) t_SKU = parts[coreIndex + 1].trim();
                 if (numP > coreIndex + 2) t_FW = parts[coreIndex + 2].trim();
                 break;
@@ -806,8 +813,13 @@
         a_YearCode = { "25":"E", "26":"F", "27":"G", "28":"H", "29":"J", "30":"K" }[a_Year] || "?";
         cptPrefix = (parseInt(a_Year) > 26 || (parseInt(a_Year) === 26 && parseInt(a_Week) >= 40)) ? "RG" : "VZ";
 
+        // Tinh chinh lai BranchName RATING sau khi da co cptPrefix
+        if (branchName === "US RATING (FC/CPT)") {
+            if (cptPrefix !== "RG") branchName = "FC US RATING";
+        }
+
         switch (branchName) {
-            case "FC US SN": case "FC US RATING": case "CPT US RATING":
+            case "FC US SN": case "FC US RATING": case "CPT US RATING": case "US RATING (FC/CPT)":
                 if (coreBarcode.length >= 4) b_Year = coreBarcode.substring(2, 4);
                 if (coreBarcode.length >= 6) b_Week = coreBarcode.substring(4, 6);
                 if (coreBarcode.length >= 7) b_Day = coreBarcode.substring(6, 7);
@@ -846,7 +858,8 @@
                 if (coreBarcode.length >= 6) b_Week = coreBarcode.substring(4, 6);
                 if (coreBarcode.length >= 7) b_Day = coreBarcode.substring(6, 7);
                 if (coreBarcode.length >= 8) b_Shift = coreBarcode.substring(7, 8);
-                idealCore = cptPrefix + a_Year + a_Week + a_Day + a_Shift + Mid(coreBarcode, 9);
+                // FIX VBA Mid():
+                idealCore = cptPrefix + a_Year + a_Week + a_Day + a_Shift + coreBarcode.substring(8);
                 break;
             case "CPT EMEA SHIPPING MARK": case "CPT ANZ SHIPPING MARK":
                 if (coreBarcode.length >= 4) b_Year = coreBarcode.substring(2, 4);
@@ -936,7 +949,7 @@
                     tempPass = false; tempErr += "[-] Thiếu SKU trên tem.\n";
                 }
                 
-                if (branchName === "FC US RATING") {
+                if (branchName === "FC US RATING" || branchName === "US RATING (FC/CPT)") {
                     if (t_m_FW) {
                         if (!t_FW) { tempPass = false; tempErr += `[-] Thiếu Firmware trên tem! Phải in: [${t_m_FW}]\n`; }
                         else if (t_FW !== t_m_FW) { tempPass = false; tempErr += `[-] Firmware sai: In [${t_FW}] -> Đúng là [${t_m_FW}]\n`; }
@@ -986,6 +999,7 @@
                 switch(branchName) {
                     case "FC US SN": templateRaw = `RG${a_Year}${a_Week}${a_Day}${a_Shift}(Line)xxxx (Tổng 14 ký tự)`; break;
                     case "FC US RATING": templateRaw = `RG${a_Year}${a_Week}${a_Day}${a_Shift}(Line)xxxx ${d_SKU}${d_FW}`; break;
+                    case "US RATING (FC/CPT)": templateRaw = `RG${a_Year}${a_Week}${a_Day}${a_Shift}xxxxxx ${d_SKU}${d_FW}`; break;
                     case "FC ANZ SN": templateRaw = `xxRG${a_Year}${a_Week}xxxxx (Tổng 13 ký tự)`; break;
                     case "FC ANZ RATING": templateRaw = `xxRG${a_Year}${a_Week}xxxxx ${d_SKU}`; break;
                     case "FC EMEA SN": templateRaw = `${d_Prefix}${a_Week}${a_Year}xxxxx (Tổng 21 ký tự)`; break;
@@ -1002,7 +1016,7 @@
             } else {
                 switch(branchName) {
                     case "FC US SN": case "CPT US SN": case "KA FORMAT": templateRaw = idealCore; break;
-                    case "FC US RATING": templateRaw = `${idealCore} ${d_SKU}${d_FW}`; break;
+                    case "FC US RATING": case "US RATING (FC/CPT)": templateRaw = `${idealCore} ${d_SKU}${d_FW}`; break;
                     case "FC ANZ RATING": templateRaw = `${idealCore} ${d_SKU}`; break;
                     case "FC EMEA SN":
                         exPrefix = m_Prefix ? m_Prefix : idealCore.substring(0,12);
@@ -1015,6 +1029,7 @@
                     case "CPT EMEA RATING": 
                         c_Line = coreBarcode.length >= 10 ? coreBarcode.substring(8, 10) : "01";
                         c_Serial = coreBarcode.length >= 19 ? coreBarcode.substring(18) : "xxxxxx";
+                        // FIX VBA Mid():
                         fullCoreEMEA = `${cptPrefix}${a_Year}${a_Week}${a_Day}${a_Shift}${c_Line}${d_Console}${d_Doc}${c_Serial}`;
                         templateRaw = hasPipe ? `${d_Model}|${fullCoreEMEA}|${d_SKU}` : `${fullCoreEMEA} ${d_SKU}`;
                         break;
