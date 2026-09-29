@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>HỆ THỐNG KIỂM TRA TEM</title>
-	<!-- THÊM DÒNG NÀY ĐỂ ĐỔI LOGO FAVICON -->
-   <link rel="icon" type="image/png" href="favicon.png">
+    <!-- THÊM DÒNG NÀY ĐỂ ĐỔI LOGO FAVICON -->
+    <link rel="icon" type="image/png" href="favicon.png">
     <!-- THƯ VIỆN QUÉT MÃ HTML5-QRCODE -->
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <style>
@@ -111,9 +111,14 @@
     <!-- Ô QUÉT MÃ VÀ NÚT CAMERA -->
     <div class="form-row">
         <label for="txtBarcode">2. QUÉT MÃ TEM (HOẶC NHẬP RỒI ẤN ENTER):</label>
-        <div class="input-group">
-            <input type="text" id="txtBarcode" autofocus placeholder="Chờ tín hiệu súng quét hoặc mở camera..." autocomplete="off">
-            <button id="btnToggleCam" class="btn-cam-trigger" onclick="toggleCamera()">📷 MỞ CAMERA</button>
+        <div class="input-group" style="flex-wrap: wrap;">
+            <input type="text" id="txtBarcode" autofocus placeholder="Chờ tín hiệu súng quét hoặc mở camera..." autocomplete="off" style="flex: 1 1 100%; min-width: 200px;">
+            <div style="display: flex; gap: 10px; width: 100%;">
+                <button id="btnToggleCam" class="btn-cam-trigger" style="flex: 1;" onclick="toggleCamera()">📷 MỞ CAMERA</button>
+                <button id="btnUploadImg" class="btn-cam-trigger" style="flex: 1; background: #673ab7;" onclick="document.getElementById('fileBarcode').click()">📁 TẢI ẢNH LÊN/ CHỤP HÌNH</button>
+            </div>
+            <!-- Input ẩn dùng để gọi trình duyệt file/camera của hệ điều hành -->
+            <input type="file" id="fileBarcode" accept="image/*" style="display: none;" onchange="scanBarcodeFromImage(this)">
         </div>
         
         <!-- KHUNG CAMERA NÂNG CAO VỚI ZOOM, FLASH & CHẠM LẤY NÉT -->
@@ -194,6 +199,70 @@
 
         loadMasterDataFromSharePoint(false);
     };
+
+// =========================================================================
+    // QUÉT BARCODE TỪ ẢNH TẢI LÊN HOẶC CHỤP HÌNH
+    // =========================================================================
+    async function scanBarcodeFromImage(inputElement) {
+        if (!inputElement.files || inputElement.files.length === 0) return;
+
+        const imageFile = inputElement.files[0];
+        const resultBox = document.getElementById("resultBox");
+        
+        resultBox.className = "result-warn";
+        resultBox.innerText = "⏳ Đang quét và phân tích mã trong ảnh...";
+
+        // Nếu camera trực tiếp đang mở, tự động tắt đi để tránh xung đột phần cứng
+        if (isCameraOpen) {
+            document.getElementById("btnToggleCam").click();
+            await new Promise(resolve => setTimeout(resolve, 600)); // Chờ luồng video tắt hẳn
+        }
+
+        if (!html5QrCode) {
+            html5QrCode = new Html5Qrcode("reader");
+        }
+
+        try {
+            // Thay đổi QUAN TRỌNG: Dùng scanFileV2 để lấy được cả định dạng mã (format)
+            const decodedResult = await html5QrCode.scanFileV2(imageFile, false);
+            const decodedText = decodedResult.decodedText;
+            
+            playSound('PASS');
+
+            // Bổ sung tiền tố AIM ID dựa trên định dạng mã nhận diện được
+            let formatName = decodedResult.result?.format?.formatName || "";
+            let aimPrefix = "";
+            switch (formatName) {
+                case "CODE_39": aimPrefix = "]A0"; break;
+                case "CODE_128": aimPrefix = "]C0"; break;
+                case "DATA_MATRIX": aimPrefix = "]d1"; break;
+                case "QR_CODE": aimPrefix = "]Q1"; break;
+                case "ITF": aimPrefix = "]I0"; break;
+                case "EAN_13": case "UPC_A": aimPrefix = "]E0"; break;
+                case "PDF_417": aimPrefix = "]L0"; break;
+                default: aimPrefix = "";
+            }
+
+            let fullScanText = aimPrefix + decodedText;
+
+            // Gán giá trị đọc được vào ô Barcode và gọi lõi Poka-Yoke xử lý
+            const inputBarcode = document.getElementById("txtBarcode");
+            inputBarcode.value = fullScanText;
+            
+            setTimeout(() => {
+                processBarcode(fullScanText);
+                inputBarcode.value = "";
+                inputBarcode.focus();
+            }, 100);
+
+        } catch (err) {
+            playSound('NG');
+            showResult("NG", `NG - KHÔNG ĐỌC ĐƯỢC MÃ TỪ ẢNH!\nLỗi: Hình ảnh quá mờ, lóa sáng hoặc không chứa định dạng tem hợp lệ.\nHãy thử chụp lại gần và rõ nét hơn.`);
+        } finally {
+            // Reset input để người dùng có thể chọn lại chính tấm ảnh đó nếu muốn thử lại
+            inputElement.value = "";
+        }
+    }
 
     function toggleCamera() {
         const btn = document.getElementById("btnToggleCam");
@@ -304,7 +373,7 @@
                     const btnTorch = document.getElementById("btnTorch");
                     if (!capabilities.torch) {
                         btnTorch.style.opacity = "0.5";
-                        btnTorch.innerText = "⚡ Flash (Ko hỗ trợ)";
+                        btnTorch.innerText = "⚡ Flash (Không hỗ trợ)";
                     } else {
                         btnTorch.style.opacity = "1";
                         btnTorch.innerText = "⚡ Đèn Flash: TẮT";
