@@ -168,11 +168,21 @@
     }
 
     document.getElementById("txtMachineId").addEventListener("dblclick", function() {
-        let newName = prompt("Nhập tên trạm mới (VD: LINE01_IPQC):", currentMachineID);
-        if (newName && newName.trim() !== "") {
-            currentMachineID = newName.trim().toUpperCase();
-            localStorage.setItem("AUTO_STATION_ID", currentMachineID);
-            this.innerText = `ID: ${currentMachineID}`;
+        // 1. Yêu cầu nhập mật khẩu trước
+        let pass = prompt("Yêu cầu quyền Admin!\nNhập mật khẩu để đổi ID máy:");
+        
+        // 2. Kiểm tra mật khẩu (dùng chung pass admin1612 với file Excel VBA)
+        if (pass === "admin1612") {
+            let newName = prompt("Nhập tên trạm mới (VD: LINE01_IPQC):", currentMachineID);
+            if (newName && newName.trim() !== "") {
+                currentMachineID = newName.trim().toUpperCase();
+                localStorage.setItem("AUTO_STATION_ID", currentMachineID);
+                this.innerText = `ID: ${currentMachineID}`;
+                alert("Đã cập nhật ID máy thành công!");
+            }
+        } else if (pass !== null) { 
+            // Nếu nhập sai (và không phải bấm nút Cancel)
+            alert("Mật khẩu không đúng! Từ chối truy cập.");
         }
     });
 
