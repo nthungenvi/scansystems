@@ -118,7 +118,7 @@
                 <button id="btnUploadImg" class="btn-cam-trigger" style="flex: 1; background: #673ab7;" onclick="document.getElementById('fileBarcode').click()">📁 TẢI ẢNH LÊN</button>
             </div>
             <!-- Input ẩn dùng để gọi trình duyệt file/camera của hệ điều hành -->
-            <input type="file" id="fileBarcode" accept="image/*" style="display: none;" onchange="scanBarcodeFromImage(this)">
+            <input type="file" id="fileBarcode" accept="image/*" capture="environment" style="display: none;" onchange="scanBarcodeFromImage(this)">
         </div>
         
         <!-- KHUNG CAMERA NÂNG CAO VỚI ZOOM, FLASH & CHẠM LẤY NÉT -->
@@ -210,7 +210,7 @@
         loadMasterDataFromSharePoint(false);
     };
 
-// =========================================================================
+    // =========================================================================
     // QUÉT BARCODE TỪ ẢNH TẢI LÊN HOẶC CHỤP HÌNH
     // =========================================================================
     async function scanBarcodeFromImage(inputElement) {
@@ -756,6 +756,14 @@
                 showResult("NG", `NG - LỖI KHOẢNG TRẮNG TRONG TEM CÓ GẠCH ĐỨNG (|)!\nChuỗi quét: [${rawText}]`);
                 sendWebhookLog(targetModel, rawText, "NG", modeNote + "Lỗi dấu cách trong chuỗi Pipe"); return;
             }
+            
+            // --- BỔ SUNG CHỐT CHẶN: ÉP LỖI NẾU CÓ 2 DẤU || LIỀN NHAU HOẶC Ở ĐẦU/CUỐI ---
+            if (rawText.includes("||") || rawText.startsWith("|") || rawText.endsWith("|")) {
+                showResult("NG", `NG - LỖI DƯ DẤU GẠCH ĐỨNG (|)!\nTem in bị khuyết dữ liệu hoặc dư dấu phân cách.\nChuỗi quét: [${rawText}]`);
+                sendWebhookLog(targetModel, rawText, "NG", modeNote + "Lỗi chuỗi chứa || liền nhau"); return;
+            }
+            // -------------------------------------------------------------------------
+
             parts = rawText.split("|");
         } else if (rawText.includes(" ")) {
             if (rawText.includes("  ")) {
