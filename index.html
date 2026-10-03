@@ -58,7 +58,7 @@
 
 <div class="container">
     <div class="header">
-        <h2>HỆ THỐNG KIỂM TRA TEM (WEB V1.1)</h2>
+        <h2>HỆ THỐNG KIỂM TRA TEM V1.2</h2>
         <div class="sync-box">
             <div>
                 <span id="txtMachineId" class="machine-id-text" title="Chạm đúp để đổi tên máy">ID: ...</span>
@@ -168,10 +168,7 @@
     }
 
     document.getElementById("txtMachineId").addEventListener("dblclick", function() {
-        // 1. Yêu cầu nhập mật khẩu trước
         let pass = prompt("Yêu cầu quyền Admin!\nNhập mật khẩu để đổi ID máy:");
-        
-        // 2. Kiểm tra mật khẩu (dùng chung pass admin1612 với file Excel VBA)
         if (pass === "admin1612") {
             let newName = prompt("Nhập tên trạm mới (VD: LINE01_IPQC):", currentMachineID);
             if (newName && newName.trim() !== "") {
@@ -181,7 +178,6 @@
                 alert("Đã cập nhật ID máy thành công!");
             }
         } else if (pass !== null) { 
-            // Nếu nhập sai (và không phải bấm nút Cancel)
             alert("Mật khẩu không đúng! Từ chối truy cập.");
         }
     });
@@ -210,36 +206,27 @@
         loadMasterDataFromSharePoint(false);
     };
 
-    // =========================================================================
-    // QUÉT BARCODE TỪ ẢNH TẢI LÊN HOẶC CHỤP HÌNH
-    // =========================================================================
     async function scanBarcodeFromImage(inputElement) {
         if (!inputElement.files || inputElement.files.length === 0) return;
-
         const imageFile = inputElement.files[0];
         const resultBox = document.getElementById("resultBox");
         
         resultBox.className = "result-warn";
         resultBox.innerText = "⏳ Đang quét và phân tích mã trong ảnh...";
 
-        // Nếu camera trực tiếp đang mở, tự động tắt đi để tránh xung đột phần cứng
         if (isCameraOpen) {
             document.getElementById("btnToggleCam").click();
-            await new Promise(resolve => setTimeout(resolve, 600)); // Chờ luồng video tắt hẳn
+            await new Promise(resolve => setTimeout(resolve, 600));
         }
 
-        if (!html5QrCode) {
-            html5QrCode = new Html5Qrcode("reader");
-        }
+        if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
 
         try {
-            // Thay đổi QUAN TRỌNG: Dùng scanFileV2 để lấy được cả định dạng mã (format)
             const decodedResult = await html5QrCode.scanFileV2(imageFile, false);
             const decodedText = decodedResult.decodedText;
             
             playSound('PASS');
 
-            // Bổ sung tiền tố AIM ID dựa trên định dạng mã nhận diện được
             let formatName = decodedResult.result?.format?.formatName || "";
             let aimPrefix = "";
             switch (formatName) {
@@ -255,7 +242,6 @@
 
             let fullScanText = aimPrefix + decodedText;
 
-            // Gán giá trị đọc được vào ô Barcode và gọi lõi Poka-Yoke xử lý
             const inputBarcode = document.getElementById("txtBarcode");
             inputBarcode.value = fullScanText;
             
@@ -269,7 +255,6 @@
             playSound('NG');
             showResult("NG", `NG - KHÔNG ĐỌC ĐƯỢC MÃ TỪ ẢNH!\nLỗi: Hình ảnh quá mờ, lóa sáng hoặc không chứa định dạng tem hợp lệ.\nHãy thử chụp lại gần và rõ nét hơn.`);
         } finally {
-            // Reset input để người dùng có thể chọn lại chính tấm ảnh đó nếu muốn thử lại
             inputElement.value = "";
         }
     }
@@ -627,11 +612,7 @@
         }
     });
 
-    // =========================================================================
-    // LÕI XỬ LÝ POKA-YOKE
-    // =========================================================================
     function processBarcode(rawScan) {
-        // --- KHAI BÁO TOÀN BỘ BIẾN TẠI ĐÂY ĐỂ ĐẢM BẢO BLOCK-SCOPE ---
         let modeNote = "";
         let originalText = "";
         let barcodeType = "Không xác định";
@@ -673,7 +654,6 @@
         
         let d_SKU = "", d_Model = "", d_EAN = "", d_FW = "", d_Console = "", d_Doc = "", d_Prefix = "", d_Qty = "";
         let c_Line = "", c_Serial = "", fullCoreEMEA = "", exPrefix = "", exSKU_Pass = "";
-        // -------------------------------------------------------------
 
         const resultBox = document.getElementById("resultBox");
         const btnCopy = document.getElementById("btnCopyFormat");
@@ -757,12 +737,10 @@
                 sendWebhookLog(targetModel, rawText, "NG", modeNote + "Lỗi dấu cách trong chuỗi Pipe"); return;
             }
             
-            // --- BỔ SUNG CHỐT CHẶN: ÉP LỖI NẾU CÓ 2 DẤU || LIỀN NHAU HOẶC Ở ĐẦU/CUỐI ---
-            if (rawText.includes("||") || rawText.startsWith("|") || rawText.endsWith("|")) {
-                showResult("NG", `NG - LỖI DƯ DẤU GẠCH ĐỨNG (|)!\nTem in bị khuyết dữ liệu hoặc dư dấu phân cách.\nChuỗi quét: [${rawText}]`);
-                sendWebhookLog(targetModel, rawText, "NG", modeNote + "Lỗi chuỗi chứa || liền nhau"); return;
+            if (rawText.startsWith("|") || rawText.endsWith("|")) {
+                showResult("NG", `NG - LỖI DƯ DẤU GẠCH ĐỨNG (|)!\nTem in bị khuyết dữ liệu đầu hoặc cuối.\nChuỗi quét: [${rawText}]`);
+                sendWebhookLog(targetModel, rawText, "NG", modeNote + "Lỗi dấu | ở đầu hoặc cuối"); return;
             }
-            // -------------------------------------------------------------------------
 
             parts = rawText.split("|");
         } else if (rawText.includes(" ")) {
@@ -808,22 +786,33 @@
         } else if (coreBarcode.startsWith("YR")) {
             branchName = "KA FORMAT"; if (numP !== 1 || hasPipe || coreBarcode.length !== 10) isFormatError = true;
         } else if (isCptOrFcPrefix) {
-            if (numP === 5) {
+            if (numP === 7) {
+                if (parts[0].trim() === "00") {
+                    if (parts[1].trim() === "" && parts[2].trim() === "") {
+                        branchName = "CPT ANZ SN"; if (coreBarcode.length !== 16) isFormatError = true;
+                    } else {
+                        branchName = "CPT EMEA SN"; if (coreBarcode.length !== 16) isFormatError = true;
+                    }
+                } else if (parts[0].trim() === "01") {
+                    if (parts[1].trim() === "" && parts[2].trim() === "") {
+                        branchName = "CPT ANZ SHIPPING MARK"; if (coreBarcode.length !== 12) isFormatError = true;
+                    } else {
+                        branchName = "CPT EMEA SHIPPING MARK"; if (coreBarcode.length !== 12) isFormatError = true;
+                    }
+                } else {
+                    branchName = "CPT EMEA SN"; isFormatError = true;
+                }
+            } else if (numP === 5) {
                 if (parts[0].trim() === "00") { branchName = "CPT ANZ SN"; if (coreBarcode.length !== 16) isFormatError = true; }
                 else if (parts[0].trim() === "01") { branchName = "CPT ANZ SHIPPING MARK"; if (coreBarcode.length !== 12) isFormatError = true; }
                 else { branchName = "CPT ANZ SN"; isFormatError = true; }
-            } else if (numP === 7) {
-                if (parts[0].trim() === "00") { branchName = "CPT EMEA SN"; if (coreBarcode.length !== 16) isFormatError = true; }
-                else if (parts[0].trim() === "01") { branchName = "CPT EMEA SHIPPING MARK"; if (coreBarcode.length !== 12) isFormatError = true; }
-                else { branchName = "CPT EMEA SN"; isFormatError = true; }
             } else if (numP === 2 || numP === 3) {
                 if (coreBarcode.length <= 14) {
                     if (hasPipe) {
                         branchName = "CPT US RATING";
                     } else {
                         if (coreBarcode.startsWith("RG")) {
-                            // Can't assign cptPrefix yet (calculated below), will refine branchName later based on a_Year
-                            branchName = "US RATING (FC/CPT)"; 
+                            branchName = "FC US RATING"; 
                         } else {
                             branchName = "CPT US RATING";
                         }
@@ -846,7 +835,6 @@
 
         switch (branchName) {
             case "FC US RATING":
-            case "US RATING (FC/CPT)":
                 if (numP > coreIndex + 1) t_SKU = parts[coreIndex + 1].trim();
                 if (numP > coreIndex + 2) t_FW = parts[coreIndex + 2].trim();
                 break;
@@ -864,7 +852,11 @@
                 }
                 break;
             case "CPT ANZ SN": case "CPT ANZ SHIPPING MARK":
-                if (numP >= 5) { t_Qty = parts[1].trim(); t_Model = parts[3].trim(); t_SKU = parts[4].trim(); }
+                if (numP === 7) {
+                    t_Qty = parts[3].trim(); t_Model = parts[5].trim(); t_SKU = parts[6].trim();
+                } else if (numP >= 5) { 
+                    t_Qty = parts[1].trim(); t_Model = parts[3].trim(); t_SKU = parts[4].trim(); 
+                }
                 break;
             case "CPT EMEA SN": case "CPT EMEA SHIPPING MARK":
                 if (numP >= 7) { t_EAN = parts[2].trim(); t_Qty = parts[3].trim(); t_Model = parts[5].trim(); t_SKU = parts[6].trim(); }
@@ -902,13 +894,8 @@
         a_YearCode = { "25":"E", "26":"F", "27":"G", "28":"H", "29":"J", "30":"K" }[a_Year] || "?";
         cptPrefix = (parseInt(a_Year) > 26 || (parseInt(a_Year) === 26 && parseInt(a_Week) >= 40)) ? "RG" : "VZ";
 
-        // Tinh chinh lai BranchName RATING sau khi da co cptPrefix
-        if (branchName === "US RATING (FC/CPT)") {
-            if (cptPrefix !== "RG") branchName = "FC US RATING";
-        }
-
         switch (branchName) {
-            case "FC US SN": case "FC US RATING": case "CPT US RATING": case "US RATING (FC/CPT)":
+            case "FC US SN": case "FC US RATING": case "CPT US RATING":
                 if (coreBarcode.length >= 4) b_Year = coreBarcode.substring(2, 4);
                 if (coreBarcode.length >= 6) b_Week = coreBarcode.substring(4, 6);
                 if (coreBarcode.length >= 7) b_Day = coreBarcode.substring(6, 7);
@@ -947,7 +934,6 @@
                 if (coreBarcode.length >= 6) b_Week = coreBarcode.substring(4, 6);
                 if (coreBarcode.length >= 7) b_Day = coreBarcode.substring(6, 7);
                 if (coreBarcode.length >= 8) b_Shift = coreBarcode.substring(7, 8);
-                // FIX VBA Mid():
                 idealCore = cptPrefix + a_Year + a_Week + a_Day + a_Shift + coreBarcode.substring(8);
                 break;
             case "CPT EMEA SHIPPING MARK": case "CPT ANZ SHIPPING MARK":
@@ -1024,13 +1010,21 @@
                 if (branchName === "FC EMEA SN" && t_m_Prefix && t_Prefix && t_Prefix !== t_m_Prefix) {
                     tempPass = false; tempErr += `[-] Tiền tố 12 số sai: In [${t_Prefix}] -> Đúng là [${t_m_Prefix}]\n`;
                 }
-                if ((branchName === "CPT EMEA SN" || branchName === "CPT ANZ SN") && t_Qty !== "01") {
-                    tempPass = false; tempErr += `[-] Số lượng Unit sai: In [${t_Qty}] -> Đúng phải là [01]\n`;
+                
+                if (branchName === "CPT ANZ SHIPPING MARK" || branchName === "CPT EMEA SHIPPING MARK") {
+                    if (t_m_Qty !== "") {
+                        if (t_Qty !== t_m_Qty) {
+                            tempPass = false;
+                            tempErr += `[-] Q'ty (Master Carton) sai: In [${t_Qty}] -> Đúng phải là [${t_m_Qty}]\n`;
+                        }
+                    } else {
+                        if (!t_Qty) {
+                            tempPass = false;
+                            tempErr += "[-] Thiếu thông tin số lượng (Q'ty) trên tem.\n";
+                        }
+                    }
                 }
-                if (branchName === "CPT ANZ SHIPPING MARK") {
-                    if (t_m_Qty && t_Qty !== t_m_Qty) { tempPass = false; tempErr += `[-] Q'ty sai: In [${t_Qty}] -> Đúng là [${t_m_Qty}]\n`; }
-                    else if (!t_Qty) { tempPass = false; tempErr += "[-] Thiếu Q'ty trên tem.\n"; }
-                }
+                
                 if (t_SKU) {
                     let expectedSKU = branchName.includes("RATING") ? t_m_SKU_Rating : t_m_SKU_SN;
                     if (expectedSKU && t_SKU !== expectedSKU) { tempPass = false; tempErr += `[-] SKU sai: In [${t_SKU}] -> Đúng là [${expectedSKU}]\n`; }
@@ -1038,7 +1032,7 @@
                     tempPass = false; tempErr += "[-] Thiếu SKU trên tem.\n";
                 }
                 
-                if (branchName === "FC US RATING" || branchName === "US RATING (FC/CPT)") {
+                if (branchName === "FC US RATING") {
                     if (t_m_FW) {
                         if (!t_FW) { tempPass = false; tempErr += `[-] Thiếu Firmware trên tem! Phải in: [${t_m_FW}]\n`; }
                         else if (t_FW !== t_m_FW) { tempPass = false; tempErr += `[-] Firmware sai: In [${t_FW}] -> Đúng là [${t_m_FW}]\n`; }
@@ -1082,22 +1076,22 @@
             d_SKU = branchName.includes("RATING") ? (m_SKU_Rating || "SKU") : (m_SKU_SN || "SKU");
             d_Model = m_Model || "Model"; d_EAN = m_EAN || "EAN"; d_FW = m_FW ? (" " + m_FW) : "";
             d_Console = m_Console || "(Console)"; d_Doc = m_Doc || "(Doc)"; d_Prefix = m_Prefix || "xxxxxxxxxxxx";
-            d_Qty = (m_Qty && branchName === "CPT ANZ SHIPPING MARK") ? m_Qty : (t_Qty || "Qty");
+            
+            d_Qty = t_Qty || m_Qty || "Qty";
 
             if (isFormatError) {
                 switch(branchName) {
                     case "FC US SN": templateRaw = `RG${a_Year}${a_Week}${a_Day}${a_Shift}(Line)xxxx (Tổng 14 ký tự)`; break;
                     case "FC US RATING": templateRaw = `RG${a_Year}${a_Week}${a_Day}${a_Shift}(Line)xxxx ${d_SKU}${d_FW}`; break;
-                    case "US RATING (FC/CPT)": templateRaw = `RG${a_Year}${a_Week}${a_Day}${a_Shift}xxxxxx ${d_SKU}${d_FW}`; break;
                     case "FC ANZ SN": templateRaw = `xxRG${a_Year}${a_Week}xxxxx (Tổng 13 ký tự)`; break;
                     case "FC ANZ RATING": templateRaw = `xxRG${a_Year}${a_Week}xxxxx ${d_SKU}`; break;
                     case "FC EMEA SN": templateRaw = `${d_Prefix}${a_Week}${a_Year}xxxxx (Tổng 21 ký tự)`; break;
                     case "CPT US SN": templateRaw = `${cptPrefix}${a_Year}${a_Week} xxxxxx (Lưu ý KHOẢNG TRẮNG)`; break;
                     case "CPT US RATING": templateRaw = hasPipe ? `${d_Model}|${cptPrefix}${a_Year}${a_Week}${a_Day}${a_Shift}xxxxxx|${d_SKU}` : `${cptPrefix}${a_Year}${a_Week}${a_Day}${a_Shift}xxxxxx ${d_SKU}`; break;
-                    case "CPT ANZ SN": templateRaw = `00|01|${cptPrefix}${a_Year}${a_Week}${a_Day}${a_Shift}(Line)xxxxxx|${d_Model}|${d_SKU}`; break;
+                    case "CPT ANZ SN": templateRaw = `00|||${d_Qty}|${cptPrefix}${a_Year}${a_Week}${a_Day}${a_Shift}(Line)xxxxxx|${d_Model}|${d_SKU}`; break;
                     case "CPT ANZ RATING": templateRaw = hasPipe ? `${d_Model}|${cptPrefix}${a_Year}${a_Week}${a_Day}${a_Shift}(Line)xxxxxx|${d_SKU}` : `${cptPrefix}${a_Year}${a_Week}${a_Day}${a_Shift}(Line)xxxxxx ${d_SKU}`; break;
-                    case "CPT ANZ SHIPPING MARK": templateRaw = `01|${d_Qty}|${cptPrefix}${a_Year}${a_Week}xxxxxx|${d_Model}|${d_SKU}`; break;
-                    case "CPT EMEA SN": templateRaw = `00|01|${d_EAN}|01|${cptPrefix}${a_Year}${a_Week}${a_Day}${a_Shift}xxxxxxxx|${d_Model}|${d_SKU}`; break;
+                    case "CPT ANZ SHIPPING MARK": templateRaw = `01|||${d_Qty}|${cptPrefix}${a_Year}${a_Week}xxxxxx|${d_Model}|${d_SKU}`; break;
+                    case "CPT EMEA SN": templateRaw = `00|01|${d_EAN}|${d_Qty}|${cptPrefix}${a_Year}${a_Week}${a_Day}${a_Shift}xxxxxxxx|${d_Model}|${d_SKU}`; break;
                     case "CPT EMEA RATING": templateRaw = hasPipe ? `${d_Model}|${cptPrefix}${a_Year}${a_Week}${a_Day}${a_Shift}(Line)${d_Console}${d_Doc}xxxxxx|${d_SKU}` : `${cptPrefix}${a_Year}${a_Week}${a_Day}${a_Shift}(Line)${d_Console}${d_Doc}xxxxxx ${d_SKU}`; break;
                     case "CPT EMEA SHIPPING MARK": templateRaw = `01|01|${d_EAN}|${d_Qty}|${cptPrefix}${a_Year}${a_Week}xxxxxx|${d_Model}|${d_SKU}`; break;
                     case "KA FORMAT": templateRaw = `YR${a_YearCode}${a_Week}xxxxx (Tổng 10 ký tự)`; break;
@@ -1105,21 +1099,20 @@
             } else {
                 switch(branchName) {
                     case "FC US SN": case "CPT US SN": case "KA FORMAT": templateRaw = idealCore; break;
-                    case "FC US RATING": case "US RATING (FC/CPT)": templateRaw = `${idealCore} ${d_SKU}${d_FW}`; break;
+                    case "FC US RATING": templateRaw = `${idealCore} ${d_SKU}${d_FW}`; break;
                     case "FC ANZ RATING": templateRaw = `${idealCore} ${d_SKU}`; break;
                     case "FC EMEA SN":
                         exPrefix = m_Prefix ? m_Prefix : idealCore.substring(0,12);
                         templateRaw = `${exPrefix}${a_Week}${a_Year}${idealCore.slice(-5)}`; break;
                     case "CPT US RATING": case "CPT ANZ RATING": templateRaw = hasPipe ? `${d_Model}|${idealCore}|${d_SKU}` : `${idealCore} ${d_SKU}`; break;
-                    case "CPT ANZ SN": templateRaw = `00|01|${idealCore}|${d_Model}|${d_SKU}`; break;
-                    case "CPT ANZ SHIPPING MARK": templateRaw = `01|${d_Qty}|${idealCore}|${d_Model}|${d_SKU}`; break;
-                    case "CPT EMEA SN": templateRaw = `00|01|${d_EAN}|01|${idealCore}|${d_Model}|${d_SKU}`; break;
+                    case "CPT ANZ SN": templateRaw = `00|||${d_Qty}|${idealCore}|${d_Model}|${d_SKU}`; break;
+                    case "CPT ANZ SHIPPING MARK": templateRaw = `01|||${d_Qty}|${idealCore}|${d_Model}|${d_SKU}`; break;
+                    case "CPT EMEA SN": templateRaw = `00|01|${d_EAN}|${d_Qty}|${idealCore}|${d_Model}|${d_SKU}`; break;
                     case "CPT EMEA SHIPPING MARK": templateRaw = `01|01|${d_EAN}|${d_Qty}|${idealCore}|${d_Model}|${d_SKU}`; break;
                     case "CPT EMEA RATING": 
                         c_Line = coreBarcode.length >= 10 ? coreBarcode.substring(8, 10) : "01";
                         c_Serial = coreBarcode.length >= 19 ? coreBarcode.substring(18) : "xxxxxx";
-                        // FIX VBA Mid():
-                        fullCoreEMEA = `${cptPrefix}${a_Year}${a_Week}${a_Day}${a_Shift}${c_Line}${d_Console}${d_Doc}${c_Serial}`;
+                        fullCoreEMEA = cptPrefix + a_Year + a_Week + a_Day + a_Shift + c_Line + d_Console + d_Doc + c_Serial;
                         templateRaw = hasPipe ? `${d_Model}|${fullCoreEMEA}|${d_SKU}` : `${fullCoreEMEA} ${d_SKU}`;
                         break;
                 }
@@ -1169,7 +1162,7 @@
             model: model, 
             barcode: scan, 
             result: result, 
-            version: "WEB-MOBILE-V1.1", 
+            version: "WEB-MOBILE-V1.2", 
             details: details,
             pcname: currentMachineID 
         };
