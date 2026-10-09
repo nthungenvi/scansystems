@@ -618,6 +618,7 @@
         let barcodeType = "Không xác định";
         let isSingleRetailBarcode = false;
         let isITF14ShippingMark = false;
+        let isKASKU = false;
         let hasPipe = false;
         let parts = [];
         let numP = 0;
@@ -760,15 +761,22 @@
         numP = parts.length;
 
         if (!isSingleRetailBarcode && !isITF14ShippingMark) {
-            for (let i = 0; i < parts.length; i++) {
-                let p = parts[i].trim();
-                if (p.startsWith("RG") || p.substring(2, 4) === "RG" || p.startsWith("VZ") || p.startsWith("YR") || (p.length === 21 && !p.includes("RG") && !p.includes("VZ") && !p.includes("YR"))) {
-                    coreBarcode = p; coreIndex = i; break;
+            if (numP === 1 && !rawText.includes("|") && !rawText.includes(" ") && !rawText.startsWith("RG") && !rawText.startsWith("VZ") && !rawText.startsWith("YR") && rawText.substring(2, 4) !== "RG" && rawText.length !== 21) {
+                isKASKU = true;
+                branchName = "KA SKU";
+                coreBarcode = rawText;
+                coreIndex = 0;
+            } else {
+                for (let i = 0; i < parts.length; i++) {
+                    let p = parts[i].trim();
+                    if (p.startsWith("RG") || p.substring(2, 4) === "RG" || p.startsWith("VZ") || p.startsWith("YR") || (p.length === 21 && !p.includes("RG") && !p.includes("VZ") && !p.includes("YR"))) {
+                        coreBarcode = p; coreIndex = i; break;
+                    }
                 }
-            }
-            if (!coreBarcode) {
-                showResult("NG", `NG - KHÔNG TÌM THẤY MÃ VẠCH LÕI!\nTem in thiếu ký tự nhận diện (RG/VZ/YR).\nChuỗi quét: [${rawText}]`);
-                sendWebhookLog(targetModel, rawText, "NG", modeNote + "Thiếu mã lõi"); return;
+                if (!coreBarcode) {
+                    showResult("NG", `NG - KHÔNG TÌM THẤY MÃ VẠCH LÕI!\nTem in thiếu ký tự nhận diện (RG/VZ/YR).\nChuỗi quét: [${rawText}]`);
+                    sendWebhookLog(targetModel, rawText, "NG", modeNote + "Thiếu mã lõi"); return;
+                }
             }
         }
 
@@ -778,6 +786,8 @@
             branchName = (barcodeType === "Barcode Scanner chưa có AIM ID") ? (rawText.length === 13 ? "RETAIL BARCODE (EAN-13)" : "RETAIL BARCODE (UPC-A)") : `RETAIL BARCODE (${barcodeType})`;
         } else if (isITF14ShippingMark) {
             branchName = "SHIPPING MARK (ITF-14)";
+        } else if (isKASKU) {
+            // Khong lam gi, da set branchName o tren
         } else if (coreBarcode.substring(2, 4) === "RG") {
             if (numP === 1) { branchName = "FC ANZ SN"; if (coreBarcode.length !== 13 || hasPipe) isFormatError = true; } 
             else { branchName = "FC ANZ RATING"; if (coreBarcode.length !== 13 || numP !== 2 || hasPipe) isFormatError = true; }
@@ -834,6 +844,9 @@
         }
 
         switch (branchName) {
+            case "KA SKU":
+                t_SKU = rawText;
+                break;
             case "FC US RATING":
                 if (numP > coreIndex + 1) t_SKU = parts[coreIndex + 1].trim();
                 if (numP > coreIndex + 2) t_FW = parts[coreIndex + 2].trim();
@@ -863,7 +876,7 @@
                 break;
         }
 
-        if (!isSingleRetailBarcode && !isITF14ShippingMark) {
+        if (!isSingleRetailBarcode && !isITF14ShippingMark && !isKASKU) {
             if (isRework) {
                 let needDayShift = !["CPT US SN", "CPT EMEA SHIPPING MARK", "CPT ANZ SHIPPING MARK", "KA FORMAT"].includes(branchName);
                 let valY = document.getElementById("cmbRYear").value;
@@ -895,6 +908,8 @@
         cptPrefix = (parseInt(a_Year) > 26 || (parseInt(a_Year) === 26 && parseInt(a_Week) >= 40)) ? "RG" : "VZ";
 
         switch (branchName) {
+            case "KA SKU":
+                break;
             case "FC US SN": case "FC US RATING": case "CPT US RATING":
                 if (coreBarcode.length >= 4) b_Year = coreBarcode.substring(2, 4);
                 if (coreBarcode.length >= 6) b_Week = coreBarcode.substring(4, 6);
@@ -939,7 +954,7 @@
             case "CPT EMEA SHIPPING MARK": case "CPT ANZ SHIPPING MARK":
                 if (coreBarcode.length >= 4) b_Year = coreBarcode.substring(2, 4);
                 if (coreBarcode.length >= 6) b_Week = coreBarcode.substring(4, 6);
-                idealCore = cptPrefix + a_Year + a_Week + coreBarcode.substring(6);
+                idealCore = cptPrefix + a_Year + a_Week + (coreBarcode.length > 6 ? coreBarcode.substring(6) : "");
                 if (coreBarcode.length === 12) idealCore = cptPrefix + a_Year + a_Week + coreBarcode.slice(-6);
                 break;
             case "KA FORMAT":
@@ -950,7 +965,7 @@
                 break;
         }
 
-        if (!isSingleRetailBarcode && !isITF14ShippingMark) {
+        if (!isSingleRetailBarcode && !isITF14ShippingMark && !isKASKU) {
             okDetails = `Năm:\xA0${b_Year} | Tuần:\xA0${b_Week}`;
             if (isFormatError) { isPass = false; errDetails += "[!] LỖI CẤU TRÚC TEM (Sai độ dài hoặc sai định dạng)\n"; }
 
@@ -1006,6 +1021,9 @@
             } else if (isITF14ShippingMark) {
                 if (!t_m_GTIN) { tempPass = false; tempErr += "[-] MasterData chưa khai báo GTIN-14.\n"; }
                 else if (rawText !== t_m_GTIN) { tempPass = false; tempErr += `[-] GTIN-14 Shipping Mark sai: Quét [${rawText}] -> Yêu cầu [${t_m_GTIN}]\n`; }
+            } else if (isKASKU) {
+                if (!t_m_SKU_SN) { tempPass = false; tempErr += "[-] MasterData chưa khai báo SKU SN cho Model này.\n"; }
+                else if (rawText !== t_m_SKU_SN) { tempPass = false; tempErr += `[-] Mã KA SKU sai: Quét [${rawText}] -> MasterData yêu cầu [${t_m_SKU_SN}]\n`; }
             } else {
                 if (branchName === "FC EMEA SN" && t_m_Prefix && t_Prefix && t_Prefix !== t_m_Prefix) {
                     tempPass = false; tempErr += `[-] Tiền tố 12 số sai: In [${t_Prefix}] -> Đúng là [${t_m_Prefix}]\n`;
@@ -1072,6 +1090,7 @@
 
         if (isSingleRetailBarcode) templateRaw = (listAllowedEAN.length > 0) ? `Yêu cầu mã hộp phải là: ${listAllowedEAN.join(", ")}` : "Chưa khai báo EAN/UPC trong MasterData!";
         else if (isITF14ShippingMark) templateRaw = (listAllowedGTIN.length > 0) ? `Yêu cầu mã Shipping Mark phải là: ${listAllowedGTIN.join(", ")}` : "Chưa khai báo GTIN-14 trong MasterData!";
+        else if (isKASKU) templateRaw = m_SKU_SN ? `Yêu cầu mã SKU phải là: [${m_SKU_SN}]` : "Chưa khai báo SKU SN trong MasterData!";
         else {
             d_SKU = branchName.includes("RATING") ? (m_SKU_Rating || "SKU") : (m_SKU_SN || "SKU");
             d_Model = m_Model || "Model"; d_EAN = m_EAN || "EAN"; d_FW = m_FW ? (" " + m_FW) : "";
@@ -1112,8 +1131,14 @@
                     case "CPT EMEA RATING": 
                         c_Line = coreBarcode.length >= 10 ? coreBarcode.substring(8, 10) : "01";
                         c_Serial = coreBarcode.length >= 19 ? coreBarcode.substring(18) : "xxxxxx";
+                        
                         fullCoreEMEA = cptPrefix + a_Year + a_Week + a_Day + a_Shift + c_Line + d_Console + d_Doc + c_Serial;
-                        templateRaw = hasPipe ? `${d_Model}|${fullCoreEMEA}|${d_SKU}` : `${fullCoreEMEA} ${d_SKU}`;
+                        
+                        if (hasPipe) {
+                            templateRaw = d_Model + "|" + fullCoreEMEA + "|" + d_SKU;
+                        } else {
+                            templateRaw = fullCoreEMEA + " " + d_SKU;
+                        }
                         break;
                 }
             }
@@ -1122,6 +1147,7 @@
         if (isPass && !isFormatError) {
             if (isSingleRetailBarcode) passMsg = `PASS - MÃ EAN/UPC\nLoại mã: ${barcodeType}\nMã quét: ${rawText}\nKhớp MasterData: ${m_EAN}`;
             else if (isITF14ShippingMark) passMsg = `PASS - SHIPPING MARK\nLoại mã: ${barcodeType}\nMã quét: ${rawText}\nKhớp MasterData GTIN-14: ${m_GTIN}`;
+            else if (isKASKU) passMsg = `PASS - KA SKU\nLoại mã vạch: ${barcodeType}\nMã quét: ${rawText}\nSKU match: ${m_SKU_SN}`;
             else {
                 passMsg = `PASS - ${branchName}\nLoại mã vạch: ${barcodeType}\nMã quét: ${rawText}\n${okDetails}`;
                 if (branchName === "FC EMEA SN" && m_Prefix) passMsg += `\nPrefix match: ${m_Prefix}`;
@@ -1162,7 +1188,7 @@
             model: model, 
             barcode: scan, 
             result: result, 
-            version: "WEB-MOBILE-V1.2", 
+            version: "WEB-MOBILE-V1.4", 
             details: details,
             pcname: currentMachineID 
         };
