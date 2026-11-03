@@ -72,10 +72,10 @@
     <!-- KHỐI CHỨC NĂNG GIAO CA & REWORK -->
     <div class="advanced-controls">
         <div class="chk-group">
-            <label><input type="checkbox" id="chkNextShift" onchange="toggleNextShift()"> GIAO CA (NEXT SHIFT)</label>
-            <label id="lblOffSunday" style="display:none;"><input type="checkbox" id="chkOffSunday"> Nghỉ CN</label>
+            <label><input type="checkbox" id="chkNextShift" onchange="toggleNextShift()"> IN TEM GIAO CA </label>
+            <label id="lblOffSunday" style="display:none;"><input type="checkbox" id="chkOffSunday"> NGHỈ CHỦ NHẬT </label>
             <span class="separator"></span>
-            <label><input type="checkbox" id="chkRework" onchange="toggleRework()"> LÀM LẠI (REWORK)</label>
+            <label><input type="checkbox" id="chkRework" onchange="toggleRework()"> REWORK-DONE JOB </label>
         </div>
         
         <div class="rework-dropdowns" id="reworkPanel">
@@ -500,7 +500,7 @@
         if (localCache && !isManual) {
             masterDataRAM = JSON.parse(localCache);
             populateModelDropdown();
-            statusLbl.innerText = `Đã nạp ${masterDataRAM.length} dòng (Offline Cache)`;
+            statusLbl.innerText = `Đã nạp ${masterDataRAM.length} model (Offline Cache)`;
         }
 
         try {
@@ -512,7 +512,7 @@
                 masterDataRAM = data;
                 localStorage.setItem("CACHED_MASTER_DATA_V2", JSON.stringify(data));
                 populateModelDropdown();
-                statusLbl.innerText = `Cập nhật lúc ${new Date().toLocaleTimeString()} (${data.length} dòng)`;
+                statusLbl.innerText = `Cập nhật lúc ${new Date().toLocaleTimeString()} (${data.length} model)`;
             } else {
                 if (!localCache) statusLbl.innerText = "Lỗi kết nối SharePoint!";
             }
