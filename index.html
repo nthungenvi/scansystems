@@ -1080,15 +1080,19 @@
                 else if (rawText !== t_m_SKU_SN) { tempPass = false; tempErr += `[-] Mã KA SKU sai: Quét [${rawText}] -> MasterData yêu cầu [${t_m_SKU_SN}]\n`; }
             } else {
                 // CHỐT CHẶN CHÉO THỊ TRƯỜNG TỪ CỘT C
-                if (t_m_Branch !== "") {
-                    let modelMarket = t_m_Branch.includes("KA") ? "KA" : (t_m_Branch.includes("EMEA") ? "EMEA" : (t_m_Branch.includes("ANZ") ? "ANZ" : (t_m_Branch.includes("US") ? "US" : "")));
-                    let scanMarket = branchName.includes("KA") ? "KA" : (branchName.includes("EMEA") ? "EMEA" : (branchName.includes("ANZ") ? "ANZ" : (branchName.includes("US") ? "US" : "")));
-                    
-                    if (modelMarket !== "" && scanMarket !== "" && modelMarket !== scanMarket) {
-                        tempPass = false;
-                        tempErr += `[-] LỖI SAI THỊ TRƯỜNG: Model này thuộc [${t_m_Branch}], không được sử dụng tem thị trường [${scanMarket}]!\n`;
-                    }
-                }
+if (t_m_Branch !== "") {
+    let modelMarket = t_m_Branch.includes("KA") ? "KA" : (t_m_Branch.includes("EMEA") ? "EMEA" : (t_m_Branch.includes("ANZ") ? "ANZ" : (t_m_Branch.includes("US") ? "US" : "")));
+    let scanMarket = branchName.includes("KA") ? "KA" : (branchName.includes("EMEA") ? "EMEA" : (branchName.includes("ANZ") ? "ANZ" : (branchName.includes("US") ? "US" : "")));
+    
+    // Ghép thêm tên nhà máy (FC / CPT) vào trước thị trường
+    let scanPlant = branchName.includes("CPT") ? "CPT " : (branchName.includes("FC") ? "FC " : "");
+    let scanBranch = (scanMarket === "KA") ? "KA" : (scanPlant + scanMarket).trim();
+    
+    if (modelMarket !== "" && scanMarket !== "" && modelMarket !== scanMarket) {
+        tempPass = false;
+        tempErr += `[-] LỖI SAI THỊ TRƯỜNG: Model này thuộc [${t_m_Branch}], không được sử dụng tem [${scanBranch}]!\n`;
+    }
+}
 
                 if (branchName === "FC EMEA SN" && t_m_Prefix && t_Prefix && t_Prefix !== t_m_Prefix) {
                     tempPass = false; tempErr += `[-] Tiền tố 12 số sai: In [${t_Prefix}] -> Đúng là [${t_m_Prefix}]\n`;
