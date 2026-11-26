@@ -58,7 +58,7 @@
 
 <div class="container">
     <div class="header">
-        <h2>HỆ THỐNG KIỂM TRA TEM V1.4 <span onclick="document.getElementById('versionModal').style.display='flex'" style="cursor:pointer; font-size:12px; background:#ffeb3b; color:black; padding:3px 8px; border-radius:12px; vertical-align:middle; margin-left:8px;">ℹ️ Chi tiết</span></h2>
+        <h2>HỆ THỐNG KIỂM TRA TEM V1.5 <span onclick="document.getElementById('versionModal').style.display='flex'" style="cursor:pointer; font-size:12px; background:#ffeb3b; color:black; padding:3px 8px; border-radius:12px; vertical-align:middle; margin-left:8px;">ℹ️ Chi tiết</span></h2>
         <div class="sync-box">
             <div>
                 <span id="txtMachineId" class="machine-id-text" title="Chạm đúp để đổi tên máy">ID: ...</span>
@@ -144,11 +144,13 @@
 <!-- MODAL VERSION INFO -->
 <div id="versionModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
     <div style="background:#3a3a3a; padding:20px; border-radius:8px; max-width:500px; width:90%; border:2px solid #00bcd4; color:white; box-shadow: 0 4px 15px rgba(0,229,255,0.3);">
-        <h3 style="color:#00bcd4; margin-top:0;">🌟 Chi tiết cập nhật V1.4</h3>
+        <h3 style="color:#00bcd4; margin-top:0;">🌟 Chi tiết cập nhật V1.5</h3>
         <ul style="line-height:1.6; padding-left:20px; font-size:14px;">
+            <li><b>[TÍNH NĂNG] Bổ sung thị trường FC THA (V1.5):</b> Hỗ trợ kiểm tra cấu trúc 20 ký tự V-xxxxxx-WW-YY-xxxxx (VD: 025652016) và đối chiếu Prefix từ Cột J MasterData.</li>
+            <li><b>[TÍNH NĂNG] Cảnh báo thiếu MasterData (V1.5):</b> Đổi nền Vàng + phát còi WARN khi tem PASS nhưng MasterData đang trống Prefix (FC EMEA / FC THA), Console/Doc No. (CPT EMEA), Console (CPT RU) hoặc EAN (CPT EMEA SN/Shipping Mark).</li>
             <li><b>[TÍNH NĂNG] Bổ sung thị trường CPT RU (V1.4):</b> Hỗ trợ định dạng lai cho đơn hàng RU (Rating theo chuẩn EMEA với Doc "00"; SN & Shipping Mark theo chuẩn không EAN 00|||... và 01|||...).</li>
             <li><b>[TÍNH NĂNG] Bổ sung format FC EMEA RATING (V1.4):</b> Hỗ trợ kiểm tra cấu trúc 3 cụm (21 số + SKU + Model) dành riêng cho 3 mã 025652002, 025652014, 025652015.</li>
-            <li><b>[TÍNH NĂNG] Kiểm tra thị trường (V1.3):</b> Bắt lỗi sử dụng sai loại tem giữa các thị trường EMEA, ANZ, US.</li>
+            <li><b>[TÍNH NĂNG] Kiểm tra thị trường (V1.3):</b> Bắt lỗi sử dụng sai loại tem giữa các thị trường EMEA, ANZ, US, RU, THA.</li>
         </ul>
         <button onclick="document.getElementById('versionModal').style.display='none'" style="width:100%; padding:10px; background:#00bcd4; color:black; font-weight:bold; border:none; border-radius:4px; cursor:pointer; margin-top:10px; font-size:14px;">ĐÓNG LẠI</button>
     </div>
@@ -614,7 +616,7 @@
         matchedRows.forEach(r => {
             let branch = (r["Branch (Cot B)"] || "").toString().trim().toUpperCase();
             if (branch) {
-                let m = branch.includes("KA") ? "KA" : (branch.includes("RU") ? "RU" : (branch.includes("EMEA") ? "EMEA" : (branch.includes("ANZ") ? "ANZ" : (branch.includes("US") ? "US" : ""))));
+                let m = branch.includes("KA") ? "KA" : (branch.includes("RU") ? "RU" : (branch.includes("THA") ? "THA" : (branch.includes("EMEA") ? "EMEA" : (branch.includes("ANZ") ? "ANZ" : (branch.includes("US") ? "US" : "")))));
                 if (m) {
                     markets.add(m);
                     let skuStr = r["SKU SN"] || r["SKU Rating (Cot A)"] || "N/A";
@@ -817,7 +819,7 @@
         numP = parts.length;
 
         if (!isSingleRetailBarcode && !isITF14ShippingMark) {
-            if (numP === 1 && !rawText.includes("|") && !rawText.includes(" ") && !rawText.startsWith("RG") && !rawText.startsWith("VZ") && !rawText.startsWith("YR") && rawText.substring(2, 4) !== "RG" && rawText.length !== 21) {
+            if (numP === 1 && !rawText.includes("|") && !rawText.includes(" ") && !rawText.startsWith("RG") && !rawText.startsWith("VZ") && !rawText.startsWith("YR") && !rawText.startsWith("V-") && rawText.substring(2, 4) !== "RG" && rawText.length !== 21) {
                 isKASKU = true;
                 branchName = "KA SKU";
                 coreBarcode = rawText;
@@ -825,12 +827,12 @@
             } else {
                 for (let i = 0; i < parts.length; i++) {
                     let p = parts[i].trim();
-                    if (p.startsWith("RG") || p.substring(2, 4) === "RG" || p.startsWith("VZ") || p.startsWith("YR") || (p.length === 21 && !p.includes("RG") && !p.includes("VZ") && !p.includes("YR"))) {
+                    if (p.startsWith("RG") || p.substring(2, 4) === "RG" || p.startsWith("VZ") || p.startsWith("YR") || p.startsWith("V-") || (p.length === 21 && !p.includes("RG") && !p.includes("VZ") && !p.includes("YR"))) {
                         coreBarcode = p; coreIndex = i; break;
                     }
                 }
                 if (!coreBarcode) {
-                    showResult("NG", `NG - KHÔNG TÌM THẤY MÃ VẠCH LÕI!\nTem in thiếu ký tự nhận diện (RG/VZ/YR).\nChuỗi quét: [${rawText}]`);
+                    showResult("NG", `NG - KHÔNG TÌM THẤY MÃ VẠCH LÕI!\nTem in thiếu ký tự nhận diện (RG/VZ/YR/V-).\nChuỗi quét: [${rawText}]`);
                     sendWebhookLog(targetModel, rawText, "NG", modeNote + "Thiếu mã lõi"); return;
                 }
             }
@@ -850,6 +852,9 @@
             branchName = "SHIPPING MARK (ITF-14)";
         } else if (isKASKU) {
             // Khong lam gi, da set branchName o tren
+        } else if (coreBarcode.startsWith("V-")) {
+            branchName = "FC THA";
+            if (numP !== 1 || hasPipe || !/^V-\d{6}-\d{2}-\d{2}-\d{5}$/.test(coreBarcode)) isFormatError = true;
         } else if (coreBarcode.substring(2, 4) === "RG") {
             if (numP === 1) { branchName = "FC ANZ SN"; if (coreBarcode.length !== 13 || hasPipe) isFormatError = true; } 
             else { branchName = "FC ANZ RATING"; if (coreBarcode.length !== 13 || numP !== 2 || hasPipe) isFormatError = true; }
@@ -915,6 +920,9 @@
             case "KA SKU":
                 t_SKU = rawText;
                 break;
+            case "FC THA":
+                if (coreBarcode.length >= 8) t_Prefix = coreBarcode.substring(0, 8);
+                break;
             case "FC US RATING":
                 if (numP > coreIndex + 1) t_SKU = parts[coreIndex + 1].trim();
                 if (numP > coreIndex + 2) t_FW = parts[coreIndex + 2].trim();
@@ -951,7 +959,7 @@
 
         if (!isSingleRetailBarcode && !isITF14ShippingMark && !isKASKU) {
             if (isRework) {
-                let needDayShift = !["FC ANZ SN", "FC ANZ RATING", "FC EMEA SN", "FC EMEA RATING", "CPT US SN", "CPT EMEA SHIPPING MARK", "CPT ANZ SHIPPING MARK", "CPT RU SHIPPING MARK", "KA FORMAT"].includes(branchName);
+                let needDayShift = !["FC ANZ SN", "FC ANZ RATING", "FC EMEA SN", "FC EMEA RATING", "FC THA", "CPT US SN", "CPT EMEA SHIPPING MARK", "CPT ANZ SHIPPING MARK", "CPT RU SHIPPING MARK", "KA FORMAT"].includes(branchName);
                 let valY = document.getElementById("cmbRYear").value;
                 let valW = document.getElementById("cmbRWeek").value;
                 let valD = document.getElementById("cmbRDay").value;
@@ -982,6 +990,11 @@
 
         switch (branchName) {
             case "KA SKU":
+                break;
+            case "FC THA":
+                if (coreBarcode.length >= 11) b_Week = coreBarcode.substring(9, 11);
+                if (coreBarcode.length >= 14) b_Year = coreBarcode.substring(12, 14);
+                idealCore = coreBarcode.substring(0, 8) + "-" + a_Week + "-" + a_Year + "-" + (coreBarcode.length >= 20 ? coreBarcode.slice(-5) : "xxxxx");
                 break;
             case "FC US SN": case "FC US RATING": case "CPT US RATING":
                 if (coreBarcode.length >= 4) b_Year = coreBarcode.substring(2, 4);
@@ -1051,7 +1064,7 @@
             }
 
             const dayNames = ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
-            let skipDayCheck = ["FC ANZ SN", "FC ANZ RATING", "FC EMEA SN", "FC EMEA RATING", "CPT US SN", "CPT EMEA SHIPPING MARK", "CPT ANZ SHIPPING MARK", "CPT RU SHIPPING MARK", "KA FORMAT"].includes(branchName);
+            let skipDayCheck = ["FC ANZ SN", "FC ANZ RATING", "FC EMEA SN", "FC EMEA RATING", "FC THA", "CPT US SN", "CPT EMEA SHIPPING MARK", "CPT ANZ SHIPPING MARK", "CPT RU SHIPPING MARK", "KA FORMAT"].includes(branchName);
 
             if (b_Day) {
                 let dNum = parseInt(b_Day);
@@ -1100,22 +1113,23 @@
                 else if (rawText !== t_m_SKU_SN) { tempPass = false; tempErr += `[-] Mã KA SKU sai: Quét [${rawText}] -> MasterData yêu cầu [${t_m_SKU_SN}]\n`; }
             } else {
                 // CHỐT CHẶN CHÉO THỊ TRƯỜNG TỪ CỘT C
-if (t_m_Branch !== "") {
-    let modelMarket = t_m_Branch.includes("KA") ? "KA" : (t_m_Branch.includes("RU") ? "RU" : (t_m_Branch.includes("EMEA") ? "EMEA" : (t_m_Branch.includes("ANZ") ? "ANZ" : (t_m_Branch.includes("US") ? "US" : ""))));
-    let scanMarket = branchName.includes("KA") ? "KA" : (branchName.includes("RU") ? "RU" : (branchName.includes("EMEA") ? "EMEA" : (branchName.includes("ANZ") ? "ANZ" : (branchName.includes("US") ? "US" : ""))));
-    
-    // Ghép thêm tên nhà máy (FC / CPT) vào trước thị trường
-    let scanPlant = branchName.includes("CPT") ? "CPT " : (branchName.includes("FC") ? "FC " : "");
-    let scanBranch = (scanMarket === "KA") ? "KA" : (scanPlant + scanMarket).trim();
-    
-    if (modelMarket !== "" && scanMarket !== "" && modelMarket !== scanMarket) {
-        tempPass = false;
-        tempErr += `[-] LỖI SAI THỊ TRƯỜNG: Model này thuộc [${t_m_Branch}], không được sử dụng tem [${scanBranch}]!\n`;
-    }
-}
+                if (t_m_Branch !== "") {
+                    let modelMarket = t_m_Branch.includes("KA") ? "KA" : (t_m_Branch.includes("RU") ? "RU" : (t_m_Branch.includes("THA") ? "THA" : (t_m_Branch.includes("EMEA") ? "EMEA" : (t_m_Branch.includes("ANZ") ? "ANZ" : (t_m_Branch.includes("US") ? "US" : "")))));
+                    let scanMarket = branchName.includes("KA") ? "KA" : (branchName.includes("RU") ? "RU" : (branchName.includes("THA") ? "THA" : (branchName.includes("EMEA") ? "EMEA" : (branchName.includes("ANZ") ? "ANZ" : (branchName.includes("US") ? "US" : "")))));
+                    
+                    // Ghép thêm tên nhà máy (FC / CPT) vào trước thị trường
+                    let scanPlant = branchName.includes("CPT") ? "CPT " : (branchName.includes("FC") ? "FC " : "");
+                    let scanBranch = (scanMarket === "KA") ? "KA" : (scanPlant + scanMarket).trim();
+                    
+                    if (modelMarket !== "" && scanMarket !== "" && modelMarket !== scanMarket) {
+                        tempPass = false;
+                        tempErr += `[-] LỖI SAI THỊ TRƯỜNG: Model này thuộc [${t_m_Branch}], không được sử dụng tem [${scanBranch}]!\n`;
+                    }
+                }
 
-                if ((branchName === "FC EMEA SN" || branchName === "FC EMEA RATING") && t_m_Prefix && t_Prefix && t_Prefix !== t_m_Prefix) {
-                    tempPass = false; tempErr += `[-] Tiền tố 12 số sai: In [${t_Prefix}] -> Đúng là [${t_m_Prefix}]\n`;
+                if ((branchName === "FC EMEA SN" || branchName === "FC EMEA RATING" || branchName === "FC THA") && t_m_Prefix && t_Prefix && t_Prefix !== t_m_Prefix) {
+                    tempPass = false;
+                    tempErr += (branchName === "FC THA") ? `[-] Tiền tố sai: In [${t_Prefix}] -> Đúng là [${t_m_Prefix}]\n` : `[-] Tiền tố 12 số sai: In [${t_Prefix}] -> Đúng là [${t_m_Prefix}]\n`;
                 }
                 
                 if (branchName === "CPT ANZ SHIPPING MARK" || branchName === "CPT EMEA SHIPPING MARK" || branchName === "CPT RU SHIPPING MARK") {
@@ -1135,7 +1149,7 @@ if (t_m_Branch !== "") {
                 if (t_SKU) {
                     let expectedSKU = (branchName === "FC EMEA RATING") ? (t_m_SKU_Rating || t_m_SKU_SN) : (branchName.includes("RATING") ? t_m_SKU_Rating : t_m_SKU_SN);
                     if (expectedSKU && t_SKU !== expectedSKU) { tempPass = false; tempErr += `[-] SKU sai: In [${t_SKU}] -> Đúng là [${expectedSKU}]\n`; }
-                } else if (!["FC US SN", "FC ANZ SN", "FC EMEA SN", "CPT US SN", "CPT ANZ SN", "KA FORMAT"].includes(branchName)) {
+                } else if (!["FC US SN", "FC ANZ SN", "FC EMEA SN", "FC THA", "CPT US SN", "CPT ANZ SN", "KA FORMAT"].includes(branchName)) {
                     tempPass = false; tempErr += "[-] Thiếu SKU trên tem.\n";
                 }
                 
@@ -1185,13 +1199,15 @@ if (t_m_Branch !== "") {
         else {
             let suggestBranch = branchName;
             if (m_Branch) {
-                let targetMarket = m_Branch.includes("KA") ? "KA" : (m_Branch.includes("RU") ? "RU" : (m_Branch.includes("EMEA") ? "EMEA" : (m_Branch.includes("ANZ") ? "ANZ" : (m_Branch.includes("US") ? "US" : ""))));
+                let targetMarket = m_Branch.includes("KA") ? "KA" : (m_Branch.includes("RU") ? "RU" : (m_Branch.includes("THA") ? "THA" : (m_Branch.includes("EMEA") ? "EMEA" : (m_Branch.includes("ANZ") ? "ANZ" : (m_Branch.includes("US") ? "US" : "")))));
                 let targetPlant = m_Branch.includes("CPT") ? "CPT" : (m_Branch.includes("FC") ? "FC" : "");
-                let scanMarket = branchName.includes("KA") ? "KA" : (branchName.includes("RU") ? "RU" : (branchName.includes("EMEA") ? "EMEA" : (branchName.includes("ANZ") ? "ANZ" : (branchName.includes("US") ? "US" : ""))));
+                let scanMarket = branchName.includes("KA") ? "KA" : (branchName.includes("RU") ? "RU" : (branchName.includes("THA") ? "THA" : (branchName.includes("EMEA") ? "EMEA" : (branchName.includes("ANZ") ? "ANZ" : (branchName.includes("US") ? "US" : "")))));
 
                 if (targetMarket && scanMarket && targetMarket !== scanMarket) {
                     if (targetMarket === "KA") {
                         suggestBranch = "KA FORMAT";
+                    } else if (targetMarket === "THA") {
+                        suggestBranch = `${targetPlant || "FC"} THA`;
                     } else {
                         let plant = targetPlant || (branchName.includes("CPT") ? "CPT" : "FC");
                         if (branchName.includes("SHIPPING MARK")) {
@@ -1207,7 +1223,8 @@ if (t_m_Branch !== "") {
 
             d_SKU = (suggestBranch === "FC EMEA RATING") ? (m_SKU_Rating || m_SKU_SN || "SKU") : (suggestBranch.includes("RATING") ? (m_SKU_Rating || "SKU") : (m_SKU_SN || "SKU"));
             d_Model = m_Model || "Model"; d_EAN = m_EAN || "EAN"; d_FW = m_FW ? (" " + m_FW) : "";
-            d_Console = m_Console || "(Console)"; d_Doc = m_Doc || (suggestBranch === "CPT RU RATING" ? "00" : "(Doc)"); d_Prefix = m_Prefix || "xxxxxxxxxxxx";
+            d_Console = m_Console || "(Console)"; d_Doc = m_Doc || (suggestBranch === "CPT RU RATING" ? "00" : "(Doc)");
+            d_Prefix = m_Prefix || (suggestBranch === "FC THA" ? "V-142812" : "xxxxxxxxxxxx");
             
             d_Qty = m_Qty || t_Qty || "Qty";
 
@@ -1220,6 +1237,7 @@ if (t_m_Branch !== "") {
 
             if (isFormatError || !sameCoreFamily) {
                 switch(suggestBranch) {
+                    case "FC THA": templateRaw = `${d_Prefix}-${a_Week}-${a_Year}-xxxxx (Tổng 20 ký tự)`; break;
                     case "FC US SN": templateRaw = `RG${a_Year}${a_Week}${a_Day}${a_Shift}(Line)xxxx (Tổng 14 ký tự)`; break;
                     case "FC US RATING": templateRaw = `RG${a_Year}${a_Week}${a_Day}${a_Shift}(Line)xxxx ${d_SKU}${d_FW}`; break;
                     case "FC ANZ SN": templateRaw = `xxRG${a_Year}${a_Week}xxxxx (Tổng 13 ký tự)`; break;
@@ -1238,6 +1256,9 @@ if (t_m_Branch !== "") {
                 }
             } else {
                 switch(suggestBranch) {
+                    case "FC THA":
+                        exPrefix = m_Prefix ? m_Prefix : idealCore.substring(0, 8);
+                        templateRaw = `${exPrefix}-${a_Week}-${a_Year}-${coreBarcode.slice(-5)}`; break;
                     case "FC US SN": case "FC ANZ SN": case "CPT US SN": case "KA FORMAT": templateRaw = idealCore; break;
                     case "FC US RATING": templateRaw = `${idealCore} ${d_SKU}${d_FW}`; break;
                     case "FC ANZ RATING": templateRaw = `${idealCore} ${d_SKU}`; break;
@@ -1269,23 +1290,64 @@ if (t_m_Branch !== "") {
         }
 
         if (isPass && !isFormatError) {
+            let missingFields = [];
+            let missingLogParts = [];
+
+            if (!isSingleRetailBarcode && !isITF14ShippingMark && !isKASKU) {
+                if ((branchName === "FC EMEA SN" || branchName === "FC EMEA RATING") && !m_Prefix) {
+                    missingFields.push(`- Prefix 12 số trên tem: [${t_Prefix || "TRỐNG"}] (MasterData đang trống)`);
+                    missingLogParts.push(`Prefix=${t_Prefix || "TRONG"}`);
+                }
+                if (branchName === "FC THA" && !m_Prefix) {
+                    missingFields.push(`- Tiền tố (Prefix) trên tem: [${t_Prefix || "TRỐNG"}] (MasterData đang trống Cột J)`);
+                    missingLogParts.push(`Prefix=${t_Prefix || "TRONG"}`);
+                }
+                if (branchName === "CPT EMEA RATING") {
+                    if (!m_Console) {
+                        missingFields.push(`- Console Code trên tem: [${t_Console || "TRỐNG"}] (MasterData đang trống)`);
+                        missingLogParts.push(`Console=${t_Console || "TRONG"}`);
+                    }
+                    if (!m_Doc) {
+                        missingFields.push(`- Doc No. trên tem: [${t_Doc || "TRỐNG"}] (MasterData đang trống)`);
+                        missingLogParts.push(`Doc=${t_Doc || "TRONG"}`);
+                    }
+                }
+                if (branchName === "CPT RU RATING" && !m_Console) {
+                    missingFields.push(`- Console Code trên tem: [${t_Console || "TRỐNG"}] (MasterData đang trống)`);
+                    missingLogParts.push(`Console=${t_Console || "TRONG"}`);
+                }
+                if ((branchName === "CPT EMEA SN" || branchName === "CPT EMEA SHIPPING MARK") && !m_EAN) {
+                    missingFields.push(`- Mã EAN trên tem: [${t_EAN || "TRỐNG"}] (MasterData đang trống)`);
+                    missingLogParts.push(`EAN=${t_EAN || "TRONG"}`);
+                }
+            }
+
             if (isSingleRetailBarcode) passMsg = `PASS - MÃ EAN/UPC\nLoại mã: ${barcodeType}\nMã quét: ${rawText}\nKhớp MasterData: ${m_EAN}`;
             else if (isITF14ShippingMark) passMsg = `PASS - SHIPPING MARK\nLoại mã: ${barcodeType}\nMã quét: ${rawText}\nKhớp MasterData GTIN-14: ${m_GTIN}`;
             else if (isKASKU) passMsg = `PASS - KA SKU\nLoại mã vạch: ${barcodeType}\nMã quét: ${rawText}\nSKU match: ${m_SKU_SN}`;
             else {
-                passMsg = `PASS - ${branchName}\nLoại mã vạch: ${barcodeType}\nMã quét: ${rawText}\n${okDetails}`;
-                if ((branchName === "FC EMEA SN" || branchName === "FC EMEA RATING") && m_Prefix) passMsg += `\nPrefix match: ${m_Prefix}`;
+                let passHeader = (missingFields.length > 0) ? `PASS (CẦN KIỂM TRA THỦ CÔNG - THIẾU MASTERDATA) - ${branchName}` : `PASS - ${branchName}`;
+                passMsg = `${passHeader}\nLoại mã vạch: ${barcodeType}\nMã quét: ${rawText}\n${okDetails}`;
+                if ((branchName === "FC EMEA SN" || branchName === "FC EMEA RATING" || branchName === "FC THA") && m_Prefix) passMsg += `\nPrefix match: ${m_Prefix}`;
                 if (t_SKU) {
                     exSKU_Pass = (branchName === "FC EMEA RATING") ? (m_SKU_Rating || m_SKU_SN) : (branchName.includes("RATING") ? m_SKU_Rating : m_SKU_SN);
                     if (exSKU_Pass) passMsg += `\nSKU match: ${exSKU_Pass}`;
                 }
                 if (branchName === "FC EMEA RATING" && m_Model) passMsg += `\nModel match: ${m_Model}`;
                 if (t_FW) passMsg += `\nFirmware match: ${t_FW}`;
+                if (missingFields.length > 0) {
+                    passMsg += `\n\n[!] CHƯA CÓ TRONG MASTERDATA - VUI LÒNG ĐỐI CHIẾU THỦ CÔNG:\n${missingFields.join("\n")}\nVui lòng kiểm tra lại theo TÀI LIỆU và báo cập nhật MasterData!`;
+                }
             }
             
-            showResult("PASS", passMsg);
             currentIdealFormat = ""; btnCopy.style.display = "none";
-            sendWebhookLog(targetModel, rawText, "PASS", modeNote + `[${branchName} | ${barcodeType}] - Formatted OK`);
+            if (missingFields.length > 0) {
+                showResult("WARN", passMsg);
+                sendWebhookLog(targetModel, rawText, "PASS", modeNote + `[${branchName} | ${barcodeType}] - [WARN - THIEU MASTERDATA: ${missingLogParts.join(", ")}]`);
+            } else {
+                showResult("PASS", passMsg);
+                sendWebhookLog(targetModel, rawText, "PASS", modeNote + `[${branchName} | ${barcodeType}] - Formatted OK`);
+            }
         } else {
             finalMsg = `NG - SAI THÔNG TIN ${branchName}!\nLoại mã vạch: ${barcodeType}\n${errDetails}\n\n>>> GỢI Ý CẤU TRÚC TEM CHUẨN:\n${templateRaw}`;
             currentIdealFormat = templateRaw;
@@ -1313,7 +1375,7 @@ if (t_m_Branch !== "") {
             model: model, 
             barcode: scan, 
             result: result, 
-            version: "WEB-MOBILE-V1.4", 
+            version: "WEB-MOBILE-V1.5", 
             details: details,
             pcname: currentMachineID 
         };
