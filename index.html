@@ -58,7 +58,7 @@
 
 <div class="container">
     <div class="header">
-        <h2>HỆ THỐNG KIỂM TRA TEM V1.5 <span onclick="document.getElementById('versionModal').style.display='flex'" style="cursor:pointer; font-size:12px; background:#ffeb3b; color:black; padding:3px 8px; border-radius:12px; vertical-align:middle; margin-left:8px;">ℹ️ Chi tiết</span></h2>
+        <h2>HỆ THỐNG KIỂM TRA TEM V1.6 <span onclick="document.getElementById('versionModal').style.display='flex'" style="cursor:pointer; font-size:12px; background:#ffeb3b; color:black; padding:3px 8px; border-radius:12px; vertical-align:middle; margin-left:8px;">ℹ️ Chi tiết</span></h2>
         <div class="sync-box">
             <div>
                 <span id="txtMachineId" class="machine-id-text" title="Chạm đúp để đổi tên máy">ID: ...</span>
@@ -144,13 +144,13 @@
 <!-- MODAL VERSION INFO -->
 <div id="versionModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
     <div style="background:#3a3a3a; padding:20px; border-radius:8px; max-width:500px; width:90%; border:2px solid #00bcd4; color:white; box-shadow: 0 4px 15px rgba(0,229,255,0.3);">
-        <h3 style="color:#00bcd4; margin-top:0;">🌟 Chi tiết cập nhật V1.5</h3>
+        <h3 style="color:#00bcd4; margin-top:0;">🌟 Chi tiết cập nhật V1.6</h3>
         <ul style="line-height:1.6; padding-left:20px; font-size:14px;">
+            <li><b>[TÍNH NĂNG] PPWR QR Code &amp; GS1-128 EMEA (V1.6):</b> Kiểm tra QR PPWR theo Brand từ Cột C (<code>CPT EMEA</code> = Ryobi, <code>CPT EMEA AEG</code> = AEG) và mã vạch GS1-128 <code>(02)0+EAN13 (11)YYMM00 (37)Qty</code> (so sánh cột Q'ty với MasterData, cảnh báo nền Vàng nếu trống).</li>
+            <li><b>[TÍNH NĂNG] Chuẩn hóa Q'ty Shipping Mark &amp; GS1-128 (V1.6):</b> Shipping Mark bắt buộc 2 ký tự số (<code>01, 02, 04...</code>); GS1-128 kiểm tra số nguyên <code>1–99999999</code>; đối chiếu giá trị số với cột <code>Qty</code> trên MasterData và cảnh báo nền Vàng nếu thiếu.</li>
             <li><b>[TÍNH NĂNG] Bổ sung thị trường FC THA (V1.5):</b> Hỗ trợ kiểm tra cấu trúc 20 ký tự V-xxxxxx-WW-YY-xxxxx (VD: 025652016) và đối chiếu Prefix từ Cột J MasterData.</li>
-            <li><b>[TÍNH NĂNG] Cảnh báo thiếu MasterData (V1.5):</b> Đổi nền Vàng + phát còi WARN khi tem PASS nhưng MasterData đang trống Prefix (FC EMEA / FC THA), Console/Doc No. (CPT EMEA), Console (CPT RU) hoặc EAN (CPT EMEA SN/Shipping Mark).</li>
-            <li><b>[TÍNH NĂNG] Bổ sung thị trường CPT RU (V1.4):</b> Hỗ trợ định dạng lai cho đơn hàng RU (Rating theo chuẩn EMEA với Doc "00"; SN & Shipping Mark theo chuẩn không EAN 00|||... và 01|||...).</li>
-            <li><b>[TÍNH NĂNG] Bổ sung format FC EMEA RATING (V1.4):</b> Hỗ trợ kiểm tra cấu trúc 3 cụm (21 số + SKU + Model) dành riêng cho 3 mã 025652002, 025652014, 025652015.</li>
-            <li><b>[TÍNH NĂNG] Kiểm tra thị trường (V1.3):</b> Bắt lỗi sử dụng sai loại tem giữa các thị trường EMEA, ANZ, US, RU, THA.</li>
+            <li><b>[TÍNH NĂNG] Cảnh báo thiếu MasterData (V1.5):</b> Đổi nền Vàng + phát còi WARN khi tem PASS nhưng MasterData đang trống Prefix (FC EMEA / FC THA), Console/Doc No. (CPT EMEA), Console (CPT RU), EAN hoặc Q'ty (GS1-128 / Shipping Mark).</li>
+            <li><b>[TÍNH NĂNG] Bổ sung thị trường CPT RU &amp; FC EMEA RATING (V1.4):</b> Hỗ trợ định dạng lai cho đơn hàng RU và format 3 cụm cho 025652002, 025652014, 025652015.</li>
         </ul>
         <button onclick="document.getElementById('versionModal').style.display='none'" style="width:100%; padding:10px; background:#00bcd4; color:black; font-weight:bold; border:none; border-radius:4px; cursor:pointer; margin-top:10px; font-size:14px;">ĐÓNG LẠI</button>
     </div>
@@ -159,6 +159,8 @@
 <script>
     const API_GET_MASTERDATA_URL = "https://default8b8cc6cf0eaa4b6498e46d4672c449.30.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/08/workflows/3a18c7ccd5824e78b871c01cf93979bb/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=iTuZ9Baa3hHJu2x5Tp3laK-qHffj9Nu-34LUM_GNL_A"; 
     const FC_EMEA_RATING_MODELS = ["025652002", "025652014", "025652015"];
+    const PPWR_QR_RYOBI = "https://www.qr.ryobitools.eu/VFZU7P9JU";
+    const PPWR_QR_AEG = "https://www.qr.aeg-powertools.eu/JI5FJ42XO";
     const WEBHOOK_LOG_URL = "https://default8b8cc6cf0eaa4b6498e46d4672c449.30.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/08/workflows/8bf455924c00450fba07242e29f7071a/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=RHVCTPmoBMFCqB0v1RB4wnOG75tOpabFs6kf-6RPo7k";
 
     let masterDataRAM = [];
@@ -584,6 +586,13 @@
     setInterval(() => { loadMasterDataFromSharePoint(false); syncOfflineLogs(); }, 10 * 60 * 1000);
 
     function isAllDigits(str) { return /^\d+$/.test(str); }
+    function isTwoDigits(str) { return /^\d{2}$/.test(str); }
+    function parseQtyNum(val) {
+        if (val === undefined || val === null) return NaN;
+        let s = val.toString().trim();
+        if (!/^\d+$/.test(s)) return NaN;
+        return parseInt(s, 10);
+    }
 
     function restoreTelex(s) {
         if (!s) return "";
@@ -606,6 +615,29 @@
         return Math.ceil((pastDays + firstDayOfYear.getDay() + 1) / 7).toString().padStart(2, '0');
     }
 
+    function getAllowedMonthsForVBAWeek(yearFull, weekNum) {
+        const firstDayOfYear = new Date(yearFull, 0, 1);
+        const startOffset = (weekNum - 1) * 7 - firstDayOfYear.getDay();
+        const endOffset = startOffset + 6;
+        const dStart = new Date(yearFull, 0, 1 + Math.max(0, startOffset));
+        let dEnd = new Date(yearFull, 0, 1 + endOffset);
+        if (dEnd.getFullYear() > yearFull) dEnd = new Date(yearFull, 11, 31);
+        const mStart = (dStart.getMonth() + 1).toString().padStart(2, '0');
+        const mEnd = (dEnd.getMonth() + 1).toString().padStart(2, '0');
+        return (mStart === mEnd) ? [mStart] : [mStart, mEnd];
+    }
+
+    function getMarketFromBranchStr(b) {
+        if (!b) return "";
+        if (b.includes("KA")) return "KA";
+        if (b.includes("RU")) return "RU";
+        if (b.includes("THA")) return "THA";
+        if (b.includes("EMEA")) return "EMEA";
+        if (b.includes("ANZ")) return "ANZ";
+        if (b.includes("US")) return "US";
+        return "";
+    }
+
     function checkDataConflict(targetModel) {
         if (!targetModel) return true;
         let matchedRows = masterDataRAM.filter(r => (r["Model_Number (Cot C)"] || "").toString().trim().toUpperCase() === targetModel);
@@ -616,7 +648,7 @@
         matchedRows.forEach(r => {
             let branch = (r["Branch (Cot B)"] || "").toString().trim().toUpperCase();
             if (branch) {
-                let m = branch.includes("KA") ? "KA" : (branch.includes("RU") ? "RU" : (branch.includes("THA") ? "THA" : (branch.includes("EMEA") ? "EMEA" : (branch.includes("ANZ") ? "ANZ" : (branch.includes("US") ? "US" : "")))));
+                let m = getMarketFromBranchStr(branch);
                 if (m) {
                     markets.add(m);
                     let skuStr = r["SKU SN"] || r["SKU Rating (Cot A)"] || "N/A";
@@ -673,10 +705,13 @@
     function processBarcode(rawScan) {
         let modeNote = "";
         let originalText = "";
+        let rawText = "";
         let barcodeType = "Không xác định";
         let isSingleRetailBarcode = false;
         let isITF14ShippingMark = false;
         let isKASKU = false;
+        let isPPWRQR = false;
+        let isGS1128 = false;
         let hasPipe = false;
         let parts = [];
         let numP = 0;
@@ -687,10 +722,12 @@
         let isCptOrFcPrefix = false;
         
         let t_SKU = "", t_Model = "", t_EAN = "", t_Qty = "", t_Console = "", t_Doc = "", t_FW = "", t_Line = "", t_Prefix = "";
+        let gs1_GTIN = "", gs1_Month = "", gs1_Day = "", gs1_Qty = "";
         
         let sysTime = new Date();
         let currentHour = sysTime.getHours();
-        let a_Year, a_Week, a_Day, a_Shift;
+        let a_Year, a_Week, a_Day, a_Shift, a_Month = "";
+        let allowedMonths = [];
         let a_YearCode = "?";
         let cptPrefix = "";
         
@@ -704,8 +741,8 @@
         let modelsFound = 0;
         let isAnyRowPass = false;
         let firstRowErrDetails = "";
-        let listAllowedEAN = [], listAllowedGTIN = [];
-        let m_Branch, m_SKU_SN, m_SKU_Rating, m_Model, m_EAN, m_Console, m_Doc, m_FW, m_Qty, m_Prefix, m_GTIN;
+        let listAllowedEAN = [], listAllowedGTIN = [], listAllowedGS1GTIN = [];
+        let m_Branch = "", m_SKU_SN = "", m_SKU_Rating = "", m_Model = "", m_EAN = "", m_Console = "", m_Doc = "", m_FW = "", m_Qty = "", m_Prefix = "", m_GTIN = "";
         
         let templateRaw = "";
         let passMsg = "";
@@ -741,7 +778,7 @@
             let aimPrefix = aimFull.substring(0, 2);
             switch(aimPrefix) {
                 case "]D": barcodeType = "Data Matrix (2D)"; break;
-                case "]C": barcodeType = "Code 128 (1D)"; break;
+                case "]C": barcodeType = (aimFull === "]C1") ? "GS1-128 (1D)" : "Code 128 (1D)"; break;
                 case "]A": barcodeType = "Code 39 (1D)"; break;
                 case "]Q": barcodeType = "QR Code (2D)"; break;
                 case "]L": barcodeType = "PDF417 (2D)"; break;
@@ -768,49 +805,67 @@
             sendWebhookLog(targetModel, originalText, "NG", modeNote + "Lỗi dấu cách ẩn sau AIM ID"); return;
         }
 
-        if (originalText !== originalText.toUpperCase()) {
+        // Nhận diện PPWR QR Code (URL) TRƯỚC chốt chặn chữ thường
+        if (/^https?:\/\//i.test(originalText)) {
+            isPPWRQR = true;
+        }
+
+        if (!isPPWRQR && originalText !== originalText.toUpperCase()) {
             showResult("NG", `NG - LỖI ĐỊNH DẠNG CHỮ!\nTem chứa chữ thường. Yêu cầu 100% IN HOA.\nChuỗi quét: [${originalText}]`);
             sendWebhookLog(targetModel, originalText, "NG", modeNote + "Lỗi chữ thường"); return;
         }
 
-        rawText = originalText;
+        rawText = isPPWRQR ? originalText : originalText.replace(/\x1d/g, "");
 
         if (!targetModel) {
             showResult("WARN", "NG - CHƯA CHỌN HOẶC NHẬP MÃ HÀNG!\nVui lòng gõ hoặc chọn Model trước khi quét tem.");
             sendWebhookLog("NO_MODEL", rawText, "NG", modeNote + "Chưa chọn Model"); return;
         }
 
-        if ((barcodeType === "EAN-13" || barcodeType === "UPC-A" || ((rawText.length === 12 || rawText.length === 13) && isAllDigits(rawText))) && !rawText.includes("|") && !rawText.includes(" ")) {
-            isSingleRetailBarcode = true;
+        if (!isPPWRQR) {
+            if ((barcodeType === "EAN-13" || barcodeType === "UPC-A" || ((rawText.length === 12 || rawText.length === 13) && isAllDigits(rawText))) && !rawText.includes("|") && !rawText.includes(" ")) {
+                isSingleRetailBarcode = true;
+            }
+
+            if ((barcodeType.startsWith("ITF-14") || (rawText.length === 14 && isAllDigits(rawText))) && !rawText.includes("|") && !rawText.includes(" ") && !rawText.startsWith("RG") && !rawText.startsWith("VZ") && !rawText.startsWith("YR")) {
+                isITF14ShippingMark = true;
+            }
+
+            if (!isSingleRetailBarcode && !isITF14ShippingMark && !rawText.includes("|") && !rawText.includes(" ") &&
+                !rawText.startsWith("RG") && !rawText.startsWith("VZ") && !rawText.startsWith("YR") && !rawText.startsWith("V-") &&
+                ((barcodeType === "GS1-128 (1D)" && rawText.length !== 12 && rawText.length !== 13 && rawText.length !== 14 && rawText.length !== 21) ||
+                 (isAllDigits(rawText) && rawText.startsWith("02") && rawText.length >= 22))) {
+                isGS1128 = true;
+            }
         }
 
-        if ((barcodeType.startsWith("ITF-14") || (rawText.length === 14 && isAllDigits(rawText))) && !rawText.includes("|") && !rawText.includes(" ") && !rawText.startsWith("RG") && !rawText.startsWith("VZ") && !rawText.startsWith("YR")) {
-            isITF14ShippingMark = true;
-        }
-
-        hasPipe = rawText.includes("|");
+        hasPipe = !isPPWRQR && rawText.includes("|");
         
-        if (hasPipe) {
-            if (rawText.includes(" ")) {
-                showResult("NG", `NG - LỖI KHOẢNG TRẮNG TRONG TEM CÓ GẠCH ĐỨNG (|)!\nChuỗi quét: [${rawText}]`);
-                sendWebhookLog(targetModel, rawText, "NG", modeNote + "Lỗi dấu cách trong chuỗi Pipe"); return;
-            }
-            
-            if (rawText.startsWith("|") || rawText.endsWith("|")) {
-                showResult("NG", `NG - LỖI DƯ DẤU GẠCH ĐỨNG (|)!\nTem in bị khuyết dữ liệu đầu hoặc cuối.\nChuỗi quét: [${rawText}]`);
-                sendWebhookLog(targetModel, rawText, "NG", modeNote + "Lỗi dấu | ở đầu hoặc cuối"); return;
-            }
+        if (!isPPWRQR) {
+            if (hasPipe) {
+                if (rawText.includes(" ")) {
+                    showResult("NG", `NG - LỖI KHOẢNG TRẮNG TRONG TEM CÓ GẠCH ĐỨNG (|)!\nChuỗi quét: [${rawText}]`);
+                    sendWebhookLog(targetModel, rawText, "NG", modeNote + "Lỗi dấu cách trong chuỗi Pipe"); return;
+                }
+                
+                if (rawText.startsWith("|") || rawText.endsWith("|")) {
+                    showResult("NG", `NG - LỖI DƯ DẤU GẠCH ĐỨNG (|)!\nTem in bị khuyết dữ liệu đầu hoặc cuối.\nChuỗi quét: [${rawText}]`);
+                    sendWebhookLog(targetModel, rawText, "NG", modeNote + "Lỗi dấu | ở đầu hoặc cuối"); return;
+                }
 
-            parts = rawText.split("|");
-        } else if (rawText.includes(" ")) {
-            if (rawText.includes("  ")) {
-                showResult("NG", `NG - LỖI DƯ KHOẢNG TRẮNG!\nTem chứa 2 dấu cách liên tiếp.\nChuỗi quét: [${rawText}]`);
-                sendWebhookLog(targetModel, rawText, "NG", modeNote + "Lỗi 2 dấu cách liên tiếp"); return;
-            }
-            if ((rawText.startsWith("VZ") || rawText.startsWith("RG")) && rawText.charAt(6) === " " && (rawText.length === 13 || rawText.length === 14)) {
-                parts = [rawText];
+                parts = rawText.split("|");
+            } else if (rawText.includes(" ")) {
+                if (rawText.includes("  ")) {
+                    showResult("NG", `NG - LỖI DƯ KHOẢNG TRẮNG!\nTem chứa 2 dấu cách liên tiếp.\nChuỗi quét: [${rawText}]`);
+                    sendWebhookLog(targetModel, rawText, "NG", modeNote + "Lỗi 2 dấu cách liên tiếp"); return;
+                }
+                if ((rawText.startsWith("VZ") || rawText.startsWith("RG")) && rawText.charAt(6) === " " && (rawText.length === 13 || rawText.length === 14)) {
+                    parts = [rawText];
+                } else {
+                    parts = rawText.split(" ");
+                }
             } else {
-                parts = rawText.split(" ");
+                parts = [rawText];
             }
         } else {
             parts = [rawText];
@@ -818,7 +873,7 @@
 
         numP = parts.length;
 
-        if (!isSingleRetailBarcode && !isITF14ShippingMark) {
+        if (!isSingleRetailBarcode && !isITF14ShippingMark && !isPPWRQR && !isGS1128) {
             if (numP === 1 && !rawText.includes("|") && !rawText.includes(" ") && !rawText.startsWith("RG") && !rawText.startsWith("VZ") && !rawText.startsWith("YR") && !rawText.startsWith("V-") && rawText.substring(2, 4) !== "RG" && rawText.length !== 21) {
                 isKASKU = true;
                 branchName = "KA SKU";
@@ -846,7 +901,15 @@
 
         isCptOrFcPrefix = (coreBarcode.startsWith("VZ") || coreBarcode.startsWith("RG"));
 
-        if (isSingleRetailBarcode) {
+        if (isPPWRQR) {
+            branchName = "PPWR QR CODE";
+        } else if (isGS1128) {
+            branchName = "GS1-128 SHIPPING MARK (EMEA)";
+            coreBarcode = rawText;
+            if (!isAllDigits(rawText) || rawText.length < 27 || rawText.length > 34 || rawText.substring(0, 2) !== "02" || rawText.substring(16, 18) !== "11" || rawText.substring(24, 26) !== "37") {
+                isFormatError = true;
+            }
+        } else if (isSingleRetailBarcode) {
             branchName = (barcodeType === "Barcode Scanner chưa có AIM ID") ? (rawText.length === 13 ? "RETAIL BARCODE (EAN-13)" : "RETAIL BARCODE (UPC-A)") : `RETAIL BARCODE (${barcodeType})`;
         } else if (isITF14ShippingMark) {
             branchName = "SHIPPING MARK (ITF-14)";
@@ -920,6 +983,15 @@
             case "KA SKU":
                 t_SKU = rawText;
                 break;
+            case "GS1-128 SHIPPING MARK (EMEA)":
+                if (rawText.length >= 16) gs1_GTIN = rawText.substring(2, 16);
+                if (rawText.length >= 24) {
+                    b_Year = rawText.substring(18, 20);
+                    gs1_Month = rawText.substring(20, 22);
+                    gs1_Day = rawText.substring(22, 24);
+                }
+                if (rawText.length > 26) gs1_Qty = rawText.substring(26);
+                break;
             case "FC THA":
                 if (coreBarcode.length >= 8) t_Prefix = coreBarcode.substring(0, 8);
                 break;
@@ -957,9 +1029,9 @@
                 break;
         }
 
-        if (!isSingleRetailBarcode && !isITF14ShippingMark && !isKASKU) {
+        if (!isSingleRetailBarcode && !isITF14ShippingMark && !isKASKU && !isPPWRQR) {
             if (isRework) {
-                let needDayShift = !["FC ANZ SN", "FC ANZ RATING", "FC EMEA SN", "FC EMEA RATING", "FC THA", "CPT US SN", "CPT EMEA SHIPPING MARK", "CPT ANZ SHIPPING MARK", "CPT RU SHIPPING MARK", "KA FORMAT"].includes(branchName);
+                let needDayShift = !["FC ANZ SN", "FC ANZ RATING", "FC EMEA SN", "FC EMEA RATING", "FC THA", "CPT US SN", "CPT EMEA SHIPPING MARK", "CPT ANZ SHIPPING MARK", "CPT RU SHIPPING MARK", "KA FORMAT", "GS1-128 SHIPPING MARK (EMEA)"].includes(branchName);
                 let valY = document.getElementById("cmbRYear").value;
                 let valW = document.getElementById("cmbRWeek").value;
                 let valD = document.getElementById("cmbRDay").value;
@@ -969,7 +1041,9 @@
                     showResult("WARN", `NG - THIẾU THÔNG TIN REWORK!\nVui lòng chọn đủ ${needDayShift?"Năm, Tuần, Thứ, Ca":"Năm, Tuần"} trên giao diện.`);
                     sendWebhookLog(targetModel, rawText, "NG", modeNote + "Thiếu Rework Input"); return;
                 }
-                a_Year = valY.slice(-2); a_Week = valW; 
+                a_Year = valY.slice(-2); a_Week = valW;
+                allowedMonths = getAllowedMonthsForVBAWeek(parseInt(valY, 10), parseInt(valW, 10));
+                a_Month = allowedMonths[allowedMonths.length - 1];
                 if (needDayShift) { a_Day = valD; a_Shift = valS; } else { a_Day = ""; a_Shift = ""; }
             } else {
                 a_Shift = (currentHour >= 7 && currentHour < 19) ? "D" : "N";
@@ -982,6 +1056,8 @@
                 a_Year = sysTime.getFullYear().toString().slice(-2);
                 a_Week = getVBAWeekNum(sysTime);
                 a_Day = sysTime.getDay().toString();
+                a_Month = (sysTime.getMonth() + 1).toString().padStart(2, '0');
+                allowedMonths = [a_Month];
             }
         }
 
@@ -989,7 +1065,7 @@
         cptPrefix = (parseInt(a_Year) > 26 || (parseInt(a_Year) === 26 && parseInt(a_Week) >= 40)) ? "RG" : "VZ";
 
         switch (branchName) {
-            case "KA SKU":
+            case "KA SKU": case "PPWR QR CODE": case "GS1-128 SHIPPING MARK (EMEA)":
                 break;
             case "FC THA":
                 if (coreBarcode.length >= 11) b_Week = coreBarcode.substring(9, 11);
@@ -1051,7 +1127,35 @@
                 break;
         }
 
-        if (!isSingleRetailBarcode && !isITF14ShippingMark && !isKASKU) {
+        if (isGS1128) {
+            okDetails = `Năm:\xA0${b_Year} | Tháng:\xA0${gs1_Month}`;
+            if (isFormatError) {
+                isPass = false;
+                errDetails += "[!] LỖI CẤU TRÚC GS1-128 (Yêu cầu: 02 + 14 số + 11 + YYMM00 + 37 + 1~8 số, tổng 27–34 ký tự số)\n";
+            } else {
+                if (!gs1_GTIN.startsWith("0")) {
+                    isPass = false;
+                    errDetails += `[-] AI (02) sai định dạng: Phải bắt đầu bằng số [0] + EAN-13 (đang in [${gs1_GTIN}])\n`;
+                }
+                if (b_Year !== a_Year) {
+                    isPass = false;
+                    errDetails += `[-] AI (11) Năm: In sai [${b_Year}] -> Đúng là [${a_Year}]\n`;
+                }
+                if (!allowedMonths.includes(gs1_Month)) {
+                    isPass = false;
+                    errDetails += `[-] AI (11) Tháng: In sai [${gs1_Month}] -> Đúng là [${allowedMonths.join(" hoặc ")}]\n`;
+                }
+                if (gs1_Day !== "00") {
+                    isPass = false;
+                    errDetails += `[-] AI (11) Ngày đóng gói: In sai [${gs1_Day}] -> Bắt buộc phải là [00] (YYMM00)\n`;
+                }
+                let qtyVal = parseQtyNum(gs1_Qty);
+                if (isNaN(qtyVal) || gs1_Qty.length < 1 || gs1_Qty.length > 8 || qtyVal < 1 || qtyVal > 99999999) {
+                    isPass = false;
+                    errDetails += `[-] AI (37) Số lượng sai: In [${gs1_Qty}] -> Yêu cầu số nguyên từ 1 đến 99999999\n`;
+                }
+            }
+        } else if (!isSingleRetailBarcode && !isITF14ShippingMark && !isKASKU && !isPPWRQR) {
             okDetails = `Năm:\xA0${b_Year} | Tuần:\xA0${b_Week}`;
             if (isFormatError) { isPass = false; errDetails += "[!] LỖI CẤU TRÚC TEM (Sai độ dài hoặc sai định dạng)\n"; }
 
@@ -1061,6 +1165,11 @@
 
             if (branchName.includes("CPT") && coreBarcode.startsWith("VZ") && cptPrefix === "RG") {
                 isPass = false; errDetails += "[-] LỖI TIỀN TỐ: Từ Tuần 40/2026, CPT phải dùng [RG]. Không dùng [VZ]!\n";
+            }
+
+            if (branchName.includes("SHIPPING MARK") && t_Qty && !isTwoDigits(t_Qty)) {
+                isPass = false;
+                errDetails += `[-] Q'ty Shipping Mark sai định dạng: In [${t_Qty}] -> Bắt buộc 2 ký tự số (VD: 01, 02, 04...)\n`;
             }
 
             const dayNames = ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
@@ -1080,7 +1189,7 @@
             } else if (!skipDayCheck) { isPass = false; errDetails += "[-] Thiếu thông tin Ca trên tem.\n"; }
         }
 
-        matchedRows = masterDataRAM.filter(r => (r["Model_Number (Cot C)"] || "").toString().trim().toUpperCase() === targetModel);
+        let matchedRows = masterDataRAM.filter(r => (r["Model_Number (Cot C)"] || "").toString().trim().toUpperCase() === targetModel);
         modelsFound = matchedRows.length;
 
         for (let j = 0; j < modelsFound; j++) {
@@ -1088,21 +1197,67 @@
             let tempErr = ""; let tempPass = true;
 
             let t_m_Branch = (row["Branch (Cot B)"] || "").toString().trim().toUpperCase();
-            t_m_SKU_SN = (row["SKU SN"] || "").toString().trim().toUpperCase();
-            t_m_SKU_Rating = (row["SKU Rating (Cot A)"] || "").toString().trim().toUpperCase();
-            t_m_Model = (row["Model_Number (Cot C)"] || "").toString().trim().toUpperCase();
-            t_m_EAN = (row["EAN_UPC_Code (Cot D)"] || "").toString().trim().toUpperCase();
-            t_m_Console = (row["Console_Code (Cot E)"] || "").toString().trim().toUpperCase();
-            t_m_Doc = (row["Doc_Version (Cot F)"] || "").toString().trim().toUpperCase();
-            t_m_FW = (row["Firmware (Cot G)"] || "").toString().trim().toUpperCase();
-            t_m_Qty = (row["Qty (Cot H)"] || "").toString().trim().toUpperCase();
-            t_m_Prefix = (row["Prefix_FC_EMEA (Cot J)"] || "").toString().trim().toUpperCase();
-            t_m_GTIN = (row["GTIN-14 (Cot K)"] || "").toString().trim().toUpperCase();
+            let t_m_SKU_SN = (row["SKU SN"] || "").toString().trim().toUpperCase();
+            let t_m_SKU_Rating = (row["SKU Rating (Cot A)"] || "").toString().trim().toUpperCase();
+            let t_m_Model = (row["Model_Number (Cot C)"] || "").toString().trim().toUpperCase();
+            let t_m_EAN = (row["EAN_UPC_Code (Cot D)"] || "").toString().trim().toUpperCase();
+            let t_m_Console = (row["Console_Code (Cot E)"] || "").toString().trim().toUpperCase();
+            let t_m_Doc = (row["Doc_Version (Cot F)"] || "").toString().trim().toUpperCase();
+            let t_m_FW = (row["Firmware (Cot G)"] || "").toString().trim().toUpperCase();
+            let t_m_Qty = (row["Qty (Cot H)"] || "").toString().trim().toUpperCase();
+            let t_m_Prefix = (row["Prefix_FC_EMEA (Cot J)"] || "").toString().trim().toUpperCase();
+            let t_m_GTIN = (row["GTIN-14 (Cot K)"] || "").toString().trim().toUpperCase();
 
-            if (t_m_EAN) listAllowedEAN.push(`[${t_m_EAN}]`);
+            if (t_m_EAN) {
+                listAllowedEAN.push(`[${t_m_EAN}]`);
+                listAllowedGS1GTIN.push(`[0${t_m_EAN}]`);
+            }
             if (t_m_GTIN) listAllowedGTIN.push(`[${t_m_GTIN}]`);
 
-            if (isSingleRetailBarcode) {
+            if (isPPWRQR) {
+                let modelMarket = getMarketFromBranchStr(t_m_Branch);
+                if (!t_m_Branch) {
+                    tempPass = false;
+                    tempErr += "[-] MasterData chưa khai báo Branch (Thị trường) cho Model này.\n";
+                } else if (modelMarket !== "EMEA") {
+                    tempPass = false;
+                    tempErr += `[-] LỖI SAI THỊ TRƯỜNG: Model này thuộc [${t_m_Branch}], không áp dụng PPWR QR Code của EMEA!\n`;
+                } else {
+                    let isAEG = t_m_Branch.includes("AEG");
+                    let expectedBrand = isAEG ? "AEG" : "RYOBI";
+                    let expectedQR = isAEG ? PPWR_QR_AEG : PPWR_QR_RYOBI;
+                    if (rawText !== expectedQR) {
+                        tempPass = false;
+                        if (rawText === PPWR_QR_RYOBI || rawText === PPWR_QR_AEG) {
+                            let scannedBrand = (rawText === PPWR_QR_AEG) ? "AEG" : "RYOBI";
+                            tempErr += `[-] LỖI NHẦM THƯƠNG HIỆU (BRAND): Model [${t_m_Branch}] phải dùng QR [${expectedBrand}], nhưng tem đang in QR [${scannedBrand}]!\n`;
+                        } else {
+                            tempErr += `[-] Link PPWR QR sai: Quét [${rawText}] -> Yêu cầu [${expectedQR}]\n`;
+                        }
+                    }
+                }
+            } else if (isGS1128) {
+                if (t_m_Branch !== "") {
+                    let modelMarket = getMarketFromBranchStr(t_m_Branch);
+                    if (modelMarket !== "" && modelMarket !== "EMEA") {
+                        tempPass = false;
+                        tempErr += `[-] LỖI SAI THỊ TRƯỜNG: Model này thuộc [${t_m_Branch}], không được sử dụng tem GS1-128 của EMEA!\n`;
+                    }
+                }
+                if (t_m_EAN && gs1_GTIN) {
+                    let expectedGS1GTIN = "0" + t_m_EAN;
+                    if (gs1_GTIN !== expectedGS1GTIN) {
+                        tempPass = false;
+                        tempErr += `[-] AI (02) sai: In [${gs1_GTIN}] -> Đúng là [${expectedGS1GTIN}] (0 + EAN-13: ${t_m_EAN})\n`;
+                    }
+                }
+                let mdQtyNum = parseQtyNum(t_m_Qty);
+                let scanQtyNum = parseQtyNum(gs1_Qty);
+                if (!isNaN(mdQtyNum) && !isNaN(scanQtyNum) && scanQtyNum !== mdQtyNum) {
+                    tempPass = false;
+                    tempErr += `[-] Q'ty (AI 37) sai: In [${gs1_Qty}] -> Đúng phải là [${mdQtyNum}]\n`;
+                }
+            } else if (isSingleRetailBarcode) {
                 if (!t_m_EAN) { tempPass = false; tempErr += "[-] MasterData chưa khai báo EAN/UPC.\n"; }
                 else if (rawText !== t_m_EAN) { tempPass = false; tempErr += `[-] Mã EAN/UPC trên hộp sai: Quét [${rawText}] -> Yêu cầu [${t_m_EAN}]\n`; }
             } else if (isITF14ShippingMark) {
@@ -1114,8 +1269,8 @@
             } else {
                 // CHỐT CHẶN CHÉO THỊ TRƯỜNG TỪ CỘT C
                 if (t_m_Branch !== "") {
-                    let modelMarket = t_m_Branch.includes("KA") ? "KA" : (t_m_Branch.includes("RU") ? "RU" : (t_m_Branch.includes("THA") ? "THA" : (t_m_Branch.includes("EMEA") ? "EMEA" : (t_m_Branch.includes("ANZ") ? "ANZ" : (t_m_Branch.includes("US") ? "US" : "")))));
-                    let scanMarket = branchName.includes("KA") ? "KA" : (branchName.includes("RU") ? "RU" : (branchName.includes("THA") ? "THA" : (branchName.includes("EMEA") ? "EMEA" : (branchName.includes("ANZ") ? "ANZ" : (branchName.includes("US") ? "US" : "")))));
+                    let modelMarket = getMarketFromBranchStr(t_m_Branch);
+                    let scanMarket = getMarketFromBranchStr(branchName);
                     
                     // Ghép thêm tên nhà máy (FC / CPT) vào trước thị trường
                     let scanPlant = branchName.includes("CPT") ? "CPT " : (branchName.includes("FC") ? "FC " : "");
@@ -1133,10 +1288,12 @@
                 }
                 
                 if (branchName === "CPT ANZ SHIPPING MARK" || branchName === "CPT EMEA SHIPPING MARK" || branchName === "CPT RU SHIPPING MARK") {
-                    if (t_m_Qty !== "") {
-                        if (t_Qty !== t_m_Qty) {
+                    let mdQtyNum = parseQtyNum(t_m_Qty);
+                    let scanQtyNum = parseQtyNum(t_Qty);
+                    if (!isNaN(mdQtyNum)) {
+                        if (!t_Qty || !isTwoDigits(t_Qty) || isNaN(scanQtyNum) || scanQtyNum !== mdQtyNum) {
                             tempPass = false;
-                            tempErr += `[-] Q'ty (Master Carton) sai: In [${t_Qty}] -> Đúng phải là [${t_m_Qty}]\n`;
+                            tempErr += `[-] Q'ty (Master Carton) sai: In [${t_Qty || "TRỐNG"}] -> Đúng phải là [${mdQtyNum.toString().padStart(2, "0")}]\n`;
                         }
                     } else {
                         if (!t_Qty) {
@@ -1187,21 +1344,42 @@
                 isPass = false; masterDataError = true;
                 if (isSingleRetailBarcode && modelsFound > 1) errDetails += `[-] Mã EAN/UPC trên hộp sai! Combo Kit chấp nhận các mã: ${listAllowedEAN.join(", ")}\n`;
                 else if (isITF14ShippingMark && modelsFound > 1) errDetails += `[-] Mã GTIN-14 sai! Combo Kit chấp nhận các mã: ${listAllowedGTIN.join(", ")}\n`;
+                else if (isGS1128 && modelsFound > 1 && firstRowErrDetails.includes("AI (02) sai") && !firstRowErrDetails.includes("Q'ty") && listAllowedGS1GTIN.length > 0) errDetails += `[-] AI (02) sai! Combo Kit chấp nhận các mã (0+EAN-13): ${listAllowedGS1GTIN.join(", ")}\n`;
                 else errDetails += firstRowErrDetails;
             }
         } else {
             isPass = false; masterDataError = true; errDetails += `[?] Không tìm thấy Model [${targetModel}] trong MasterData.\n`;
         }
 
-        if (isSingleRetailBarcode) templateRaw = (listAllowedEAN.length > 0) ? `Yêu cầu mã hộp phải là: ${listAllowedEAN.join(", ")}` : "Chưa khai báo EAN/UPC trong MasterData!";
+        if (isPPWRQR) {
+            let targetMkt = getMarketFromBranchStr(m_Branch);
+            if (targetMkt === "EMEA") {
+                templateRaw = m_Branch.includes("AEG") ? PPWR_QR_AEG : PPWR_QR_RYOBI;
+            } else if (m_Branch) {
+                templateRaw = `Model [${m_Branch}] không áp dụng PPWR QR Code (chỉ áp dụng cho EMEA)!`;
+            } else {
+                templateRaw = "Chưa khai báo Branch trong MasterData!";
+            }
+        } else if (isGS1128) {
+            let targetMkt = getMarketFromBranchStr(m_Branch);
+            if (targetMkt && targetMkt !== "EMEA") {
+                templateRaw = `Model [${m_Branch}] không áp dụng tem GS1-128 (chỉ áp dụng cho EMEA)!`;
+            } else {
+                let sugGTIN = m_EAN ? ("0" + m_EAN) : "0(EAN-13)";
+                let mdQtyNum = parseQtyNum(m_Qty);
+                let scanQtyNum = parseQtyNum(gs1_Qty);
+                let sugQty = !isNaN(mdQtyNum) ? mdQtyNum.toString() : ((!isNaN(scanQtyNum) && scanQtyNum >= 1 && gs1_Qty.length <= 8) ? scanQtyNum.toString() : "(Qty)");
+                templateRaw = `02${sugGTIN}11${a_Year}${a_Month}0037${sugQty}`;
+            }
+        } else if (isSingleRetailBarcode) templateRaw = (listAllowedEAN.length > 0) ? `Yêu cầu mã hộp phải là: ${listAllowedEAN.join(", ")}` : "Chưa khai báo EAN/UPC trong MasterData!";
         else if (isITF14ShippingMark) templateRaw = (listAllowedGTIN.length > 0) ? `Yêu cầu mã Shipping Mark phải là: ${listAllowedGTIN.join(", ")}` : "Chưa khai báo GTIN-14 trong MasterData!";
         else if (isKASKU) templateRaw = m_SKU_SN ? `Yêu cầu mã SKU phải là: [${m_SKU_SN}]` : "Chưa khai báo SKU SN trong MasterData!";
         else {
             let suggestBranch = branchName;
             if (m_Branch) {
-                let targetMarket = m_Branch.includes("KA") ? "KA" : (m_Branch.includes("RU") ? "RU" : (m_Branch.includes("THA") ? "THA" : (m_Branch.includes("EMEA") ? "EMEA" : (m_Branch.includes("ANZ") ? "ANZ" : (m_Branch.includes("US") ? "US" : "")))));
+                let targetMarket = getMarketFromBranchStr(m_Branch);
                 let targetPlant = m_Branch.includes("CPT") ? "CPT" : (m_Branch.includes("FC") ? "FC" : "");
-                let scanMarket = branchName.includes("KA") ? "KA" : (branchName.includes("RU") ? "RU" : (branchName.includes("THA") ? "THA" : (branchName.includes("EMEA") ? "EMEA" : (branchName.includes("ANZ") ? "ANZ" : (branchName.includes("US") ? "US" : "")))));
+                let scanMarket = getMarketFromBranchStr(branchName);
 
                 if (targetMarket && scanMarket && targetMarket !== scanMarket) {
                     if (targetMarket === "KA") {
@@ -1226,7 +1404,14 @@
             d_Console = m_Console || "(Console)"; d_Doc = m_Doc || (suggestBranch === "CPT RU RATING" ? "00" : "(Doc)");
             d_Prefix = m_Prefix || (suggestBranch === "FC THA" ? "V-142812" : "xxxxxxxxxxxx");
             
-            d_Qty = m_Qty || t_Qty || "Qty";
+            let mdQtyNum = parseQtyNum(m_Qty);
+            if (!isNaN(mdQtyNum)) {
+                d_Qty = suggestBranch.includes("SHIPPING MARK") ? mdQtyNum.toString().padStart(2, "0") : mdQtyNum.toString();
+            } else if (t_Qty) {
+                d_Qty = t_Qty;
+            } else {
+                d_Qty = suggestBranch.includes("SHIPPING MARK") ? "01" : "Qty";
+            }
 
             let sameCoreFamily = (suggestBranch === branchName) ||
                 (["CPT ANZ SN", "CPT EMEA SN", "CPT RU SN"].includes(suggestBranch) && ["CPT ANZ SN", "CPT EMEA SN", "CPT RU SN"].includes(branchName)) ||
@@ -1293,41 +1478,64 @@
             let missingFields = [];
             let missingLogParts = [];
 
-            if (!isSingleRetailBarcode && !isITF14ShippingMark && !isKASKU) {
-                if ((branchName === "FC EMEA SN" || branchName === "FC EMEA RATING") && !m_Prefix) {
-                    missingFields.push(`- Prefix 12 số trên tem: [${t_Prefix || "TRỐNG"}] (MasterData đang trống)`);
-                    missingLogParts.push(`Prefix=${t_Prefix || "TRONG"}`);
-                }
-                if (branchName === "FC THA" && !m_Prefix) {
-                    missingFields.push(`- Tiền tố (Prefix) trên tem: [${t_Prefix || "TRỐNG"}] (MasterData đang trống Cột J)`);
-                    missingLogParts.push(`Prefix=${t_Prefix || "TRONG"}`);
-                }
-                if (branchName === "CPT EMEA RATING") {
-                    if (!m_Console) {
+            if (!isSingleRetailBarcode && !isITF14ShippingMark && !isKASKU && !isPPWRQR) {
+                if (isGS1128) {
+                    if (!m_EAN) {
+                        missingFields.push(`- AI (02) trên tem: [${gs1_GTIN || "TRỐNG"}] (MasterData đang trống EAN-13)`);
+                        missingLogParts.push(`GS1_EAN=${gs1_GTIN || "TRONG"}`);
+                    }
+                    if (isNaN(parseQtyNum(m_Qty))) {
+                        missingFields.push(`- Số lượng Q'ty AI (37) trên tem: [${gs1_Qty || "TRỐNG"}] (MasterData đang trống cột Q'ty)`);
+                        missingLogParts.push(`GS1_Qty=${gs1_Qty || "TRONG"}`);
+                    }
+                } else {
+                    if (branchName.includes("SHIPPING MARK") && isNaN(parseQtyNum(m_Qty))) {
+                        missingFields.push(`- Q'ty trên tem: [${t_Qty || "TRỐNG"}] (MasterData đang trống cột Q'ty)`);
+                        missingLogParts.push(`SM_Qty=${t_Qty || "TRONG"}`);
+                    }
+                    if ((branchName === "FC EMEA SN" || branchName === "FC EMEA RATING") && !m_Prefix) {
+                        missingFields.push(`- Prefix 12 số trên tem: [${t_Prefix || "TRỐNG"}] (MasterData đang trống)`);
+                        missingLogParts.push(`Prefix=${t_Prefix || "TRONG"}`);
+                    }
+                    if (branchName === "FC THA" && !m_Prefix) {
+                        missingFields.push(`- Tiền tố (Prefix) trên tem: [${t_Prefix || "TRỐNG"}] (MasterData đang trống Cột J)`);
+                        missingLogParts.push(`Prefix=${t_Prefix || "TRONG"}`);
+                    }
+                    if (branchName === "CPT EMEA RATING") {
+                        if (!m_Console) {
+                            missingFields.push(`- Console Code trên tem: [${t_Console || "TRỐNG"}] (MasterData đang trống)`);
+                            missingLogParts.push(`Console=${t_Console || "TRONG"}`);
+                        }
+                        if (!m_Doc) {
+                            missingFields.push(`- Doc No. trên tem: [${t_Doc || "TRỐNG"}] (MasterData đang trống)`);
+                            missingLogParts.push(`Doc=${t_Doc || "TRONG"}`);
+                        }
+                    }
+                    if (branchName === "CPT RU RATING" && !m_Console) {
                         missingFields.push(`- Console Code trên tem: [${t_Console || "TRỐNG"}] (MasterData đang trống)`);
                         missingLogParts.push(`Console=${t_Console || "TRONG"}`);
                     }
-                    if (!m_Doc) {
-                        missingFields.push(`- Doc No. trên tem: [${t_Doc || "TRỐNG"}] (MasterData đang trống)`);
-                        missingLogParts.push(`Doc=${t_Doc || "TRONG"}`);
+                    if ((branchName === "CPT EMEA SN" || branchName === "CPT EMEA SHIPPING MARK") && !m_EAN) {
+                        missingFields.push(`- Mã EAN trên tem: [${t_EAN || "TRỐNG"}] (MasterData đang trống)`);
+                        missingLogParts.push(`EAN=${t_EAN || "TRONG"}`);
                     }
-                }
-                if (branchName === "CPT RU RATING" && !m_Console) {
-                    missingFields.push(`- Console Code trên tem: [${t_Console || "TRỐNG"}] (MasterData đang trống)`);
-                    missingLogParts.push(`Console=${t_Console || "TRONG"}`);
-                }
-                if ((branchName === "CPT EMEA SN" || branchName === "CPT EMEA SHIPPING MARK") && !m_EAN) {
-                    missingFields.push(`- Mã EAN trên tem: [${t_EAN || "TRỐNG"}] (MasterData đang trống)`);
-                    missingLogParts.push(`EAN=${t_EAN || "TRONG"}`);
                 }
             }
 
-            if (isSingleRetailBarcode) passMsg = `PASS - MÃ EAN/UPC\nLoại mã: ${barcodeType}\nMã quét: ${rawText}\nKhớp MasterData: ${m_EAN}`;
+            if (isPPWRQR) {
+                let brandPass = (m_Branch && m_Branch.includes("AEG")) ? "AEG" : "RYOBI";
+                passMsg = `PASS - PPWR QR CODE (${brandPass})\nLoại mã: ${barcodeType}\nBranch: ${m_Branch}\nLink khớp chuẩn: ${rawText}`;
+            } else if (isSingleRetailBarcode) passMsg = `PASS - MÃ EAN/UPC\nLoại mã: ${barcodeType}\nMã quét: ${rawText}\nKhớp MasterData: ${m_EAN}`;
             else if (isITF14ShippingMark) passMsg = `PASS - SHIPPING MARK\nLoại mã: ${barcodeType}\nMã quét: ${rawText}\nKhớp MasterData GTIN-14: ${m_GTIN}`;
             else if (isKASKU) passMsg = `PASS - KA SKU\nLoại mã vạch: ${barcodeType}\nMã quét: ${rawText}\nSKU match: ${m_SKU_SN}`;
             else {
                 let passHeader = (missingFields.length > 0) ? `PASS (CẦN KIỂM TRA THỦ CÔNG - THIẾU MASTERDATA) - ${branchName}` : `PASS - ${branchName}`;
                 passMsg = `${passHeader}\nLoại mã vạch: ${barcodeType}\nMã quét: ${rawText}\n${okDetails}`;
+                if (isGS1128 && m_EAN) passMsg += `\nEAN-13 match: ${m_EAN}`;
+                if ((isGS1128 || branchName.includes("SHIPPING MARK")) && !isNaN(parseQtyNum(m_Qty))) {
+                    let mdQtyStr = branchName.includes("SHIPPING MARK") ? parseQtyNum(m_Qty).toString().padStart(2, "0") : parseQtyNum(m_Qty).toString();
+                    passMsg += `\nQ'ty match: ${mdQtyStr}`;
+                }
                 if ((branchName === "FC EMEA SN" || branchName === "FC EMEA RATING" || branchName === "FC THA") && m_Prefix) passMsg += `\nPrefix match: ${m_Prefix}`;
                 if (t_SKU) {
                     exSKU_Pass = (branchName === "FC EMEA RATING") ? (m_SKU_Rating || m_SKU_SN) : (branchName.includes("RATING") ? m_SKU_Rating : m_SKU_SN);
@@ -1375,7 +1583,7 @@
             model: model, 
             barcode: scan, 
             result: result, 
-            version: "WEB-MOBILE-V1.5", 
+            version: "WEB-MOBILE-V1.6", 
             details: details,
             pcname: currentMachineID 
         };
